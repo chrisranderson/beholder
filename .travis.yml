@@ -47,22 +47,6 @@ script:
       --local_resources=400,2,1.0 \
       --strategy=Javac=worker \
       --strategy=Closure=worker
-  - |
-    bazel \
-      --output_base=$HOME/.cache/bazel \
-      --batch \
-      --host_jvm_args=-Xmx500m \
-      --host_jvm_args=-Xms500m \
-      test \
-      web_library_example/... \
-      --worker_verbose \
-      --verbose_failures \
-      --test_output=errors \
-      --spawn_strategy=sandboxed \
-      --genrule_strategy=sandboxed \
-      --local_resources=400,2,1.0 \
-      --strategy=Javac=worker \
-      --strategy=Closure=worker
 
 notifications:
   email: false
