@@ -14,15 +14,13 @@ load("@io_bazel_rules_closure//closure:defs.bzl", "closure_repositories")
 
 closure_repositories()
 
-# TODO(jart): Update when #9981 is submitted.
-#             https://github.com/tensorflow/tensorflow/pull/9981
 http_archive(
     name = "org_tensorflow",
-    sha256 = "20f2da72d1ed23d8dc5ebd719b2668a68af66f53f44ab215cb554767b39fc1af",
-    strip_prefix = "tensorflow-visibility",
+    sha256 = "97ac28e1dec5120dade1de92cd8d2dddd7e50d0e077190b69ce6e270afde8a4a",
+    strip_prefix = "tensorflow-319b6ce8c6c845318416745fba20281d03ebf5c9",
     urls = [
-        "http://mirror.bazel.build/github.com/jart/tensorflow/archive/visibility.tar.gz",  # 2017-05-17
-        "https://github.com/jart/tensorflow/archive/visibility.tar.gz",
+        "http://mirror.bazel.build/github.com/tensorflow/tensorflow/archive/319b6ce8c6c845318416745fba20281d03ebf5c9.tar.gz",  # 2017-05-17
+        "https://github.com/tensorflow/tensorflow/archive/319b6ce8c6c845318416745fba20281d03ebf5c9.tar.gz",
     ],
 )
 
