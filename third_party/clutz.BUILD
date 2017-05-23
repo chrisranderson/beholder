@@ -7,9 +7,15 @@ exports_files([
     "src/resources/closure.lib.d.ts",
 ])
 
+JVM_FLAGS = [
+    "-Xss20m",  # JSCompiler needs big stacks for recursive parsing
+    "-XX:+UseParallelGC",  # Best GC when app isn't latency sensitive
+]
+
 java_binary(
     name = "clutz",
     srcs = glob(["src/main/java/com/google/javascript/clutz/**/*.java"]),
+    jvm_flags = JVM_FLAGS,
     main_class = "com.google.javascript.clutz.DeclarationGenerator",
     deps = [
         "@args4j",
@@ -23,6 +29,7 @@ java_binary(
 java_binary(
     name = "gents",
     srcs = glob(["src/main/java/com/google/javascript/gents/**/*.java"]),
+    jvm_flags = JVM_FLAGS,
     main_class = "com.google.javascript.gents.TypeScriptGenerator",
     deps = [
         "@args4j",
