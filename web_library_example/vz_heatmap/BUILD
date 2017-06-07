@@ -11,7 +11,7 @@ web_library(
     deps = [
         "@org_polymer",
         "@org_polymer_iron_resizable_behavior",
-        "@org_tensorflow//tensorflow/tensorboard/components/tf_imports_d3v4:d3",
+        "@org_tensorflow//tensorflow/tensorboard/components/tf_imports:d3",
     ],
 )
 
@@ -29,6 +29,6 @@ web_library(
         "@org_polymer_iron_component_page",
         "@org_polymer_iron_demo_helpers",
         "@org_polymer_webcomponentsjs",
-        "@org_tensorflow//tensorflow/tensorboard/components/tf_imports_d3v4:d3",
+        "@org_tensorflow//tensorflow/tensorboard/components/tf_imports:d3",
     ],
 )
