@@ -16,15 +16,15 @@ load("@io_bazel_rules_closure//closure:defs.bzl", "filegroup_external")
 closure_repositories()
 
 http_archive(
-    name = "org_tensorflow",
-    sha256 = "c5181495da2b58070d5ee7634e321923c00da145f9cd0f7eb1b6c5f9dd5de368",
-    strip_prefix = "tensorflow-f8e1cf8fa5fd244ae4cef738917675a90f2be301",
+    name = "org_tensorflow_tensorboard",
+    sha256 = "b793efe5536b06debcfadfa9ce7e774cadf654e5e9d52f6570ac11060d62e3a7",
+    strip_prefix = "tensorboard-7b3c93ca9b6aea715cc349dc10fb151c11c70e01",
     urls = [
-        "http://mirror.bazel.build/github.com/tensorflow/tensorflow/archive/f8e1cf8fa5fd244ae4cef738917675a90f2be301.tar.gz",  # 2017-06-07
-        "https://github.com/tensorflow/tensorflow/archive/f8e1cf8fa5fd244ae4cef738917675a90f2be301.tar.gz",
+        "http://mirror.bazel.build/github.com/tensorflow/tensorboard/archive/7b3c93ca9b6aea715cc349dc10fb151c11c70e01.tar.gz",  # 2017-06-14
+        "https://github.com/tensorflow/tensorboard/archive/7b3c93ca9b6aea715cc349dc10fb151c11c70e01.tar.gz",
     ],
 )
 
-load("@org_tensorflow//tensorflow:workspace.bzl", "tf_workspace")
+load("@org_tensorflow_tensorboard//third_party:workspace.bzl", "tensorboard_workspace")
 
-tf_workspace()
+tensorboard_workspace()

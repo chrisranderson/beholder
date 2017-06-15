@@ -1,8 +1,8 @@
 package(default_visibility = ["//visibility:public"])
 
 load("@io_bazel_rules_closure//closure:defs.bzl", "closure_js_proto_library")
-load("@org_tensorflow//tensorflow/tensorboard:vulcanize.bzl", "tensorboard_html_binary")
-load("@org_tensorflow//tensorflow/tensorboard:web.bzl", "ts_web_library")
+load("@org_tensorflow_tensorboard//tensorboard/defs:vulcanize.bzl", "tensorboard_html_binary")
+load("@org_tensorflow_tensorboard//tensorboard/defs:web.bzl", "ts_web_library")
 
 licenses(["notice"])  # Apache 2.0
 

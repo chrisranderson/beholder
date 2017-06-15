@@ -1,6 +1,6 @@
 package(default_visibility = ["//visibility:public"])
 
-load("@org_tensorflow//tensorflow/tensorboard:web.bzl", "ts_web_library")
+load("@org_tensorflow_tensorboard//tensorboard/defs:web.bzl", "ts_web_library")
 
 licenses(["notice"])  # Apache 2.0
 
@@ -13,8 +13,8 @@ ts_web_library(
     path = "/vz-heatmap-ts",
     deps = [
         "@org_polymer_iron_resizable_behavior",
-        "@org_tensorflow//tensorflow/tensorboard/components/tf_imports:d3",
-        "@org_tensorflow//tensorflow/tensorboard/components/tf_imports:polymer",
+        "@org_tensorflow_tensorboard//tensorboard/components/tf_imports:d3",
+        "@org_tensorflow_tensorboard//tensorboard/components/tf_imports:polymer",
     ],
 )
 
@@ -32,7 +32,7 @@ ts_web_library(
         "@org_polymer_iron_component_page",
         "@org_polymer_iron_demo_helpers",
         "@org_polymer_webcomponentsjs",
-        "@org_tensorflow//tensorflow/tensorboard/components/tf_imports:d3",
-        "@org_tensorflow//tensorflow/tensorboard/components/tf_imports:polymer",
+        "@org_tensorflow_tensorboard//tensorboard/components/tf_imports:d3",
+        "@org_tensorflow_tensorboard//tensorboard/components/tf_imports:polymer",
     ],
 )
