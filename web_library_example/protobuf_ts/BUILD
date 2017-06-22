@@ -11,6 +11,7 @@ ts_web_library(
     srcs = [
         "demo.html",
         "demo.ts",
+        "hello.ts",
     ],
     clutz_entry_points = ["proto.web_library_example.protobuf_ts.Message"],
     path = "/protobuf-ts",

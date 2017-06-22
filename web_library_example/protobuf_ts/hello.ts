@@ -15,10 +15,6 @@
  * limitations under the License.
  */
 
-import Message from 'goog:proto.web_library_example.protobuf_ts.Message';
-import {sayHello} from './hello.js';
-
-var message = new Message();
-message.setFoo('hello world!');
-document.getElementById('message').innerText = message.getFoo();
-sayHello();
+export function sayHello() {
+  console.log("hello world!");
+}
