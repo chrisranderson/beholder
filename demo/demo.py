@@ -31,12 +31,11 @@ import tensorflow as tf
 
 from tensorflow.examples.tutorials.mnist import input_data
 
-from beholder import Beholder
+from tensorboard.plugins.beholder import beholder
 
 FLAGS = None
 
 LOG_DIRECTORY = './logs'
-
 
 def train():
   # Import data
@@ -146,6 +145,8 @@ def train():
   test_writer = tf.summary.FileWriter(LOG_DIRECTORY + '/test')
   tf.global_variables_initializer().run()
 
+  visualizer = beholder.Beholder(sess, LOG_DIRECTORY)
+
   # Train the model, and also write summaries.
   # Every 10th step, measure test-set accuracy, and write test summaries
   # All other steps, run train_step on training data, & add training summaries
@@ -178,7 +179,11 @@ def train():
         print('Adding run metadata for', i)
       else:  # Record a summary
         summary, _ = sess.run([merged, train_step], feed_dict=feed_dict(True))
+        visualizer.update()
         train_writer.add_summary(summary, i)
+
+
+
   train_writer.close()
   test_writer.close()
 

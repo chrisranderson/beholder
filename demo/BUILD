@@ -1,5 +1,5 @@
 py_binary(
   name = "demo",
-  deps = ["//beholder:Beholder"],
+  deps = ["//tensorboard/plugins/beholder"],
   srcs = ["demo.py"]
 )
