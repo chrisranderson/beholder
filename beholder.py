@@ -36,9 +36,9 @@ class Beholder():
                                         max_queue=1,
                                         flush_secs=9999999)
 
+
     # TODO: store the version with the most computation already done.
     self.tensors_over_time = deque([], variance_duration)
-
 
   def _get_mode(self):
     try:
@@ -110,16 +110,15 @@ class Beholder():
 
     return tf.concat(final_tensors, axis=1)
 
-  def write_summary(self, image_tensor):
-    d = time.time()
-    # TODO: this gets slower and slower with each call.
-    summary = self.SESSION.run(tf.summary.tensor_summary('beholder-frame-{}'.format(time.time()),
-                                                         image_tensor))
-    e = time.time()
 
-    # TODO: there must be a better way to do this. Otherwise sometimes a file 
-    #       isn't available. Also breaks if you want two images at once.
-    
+  def write_summary(self):
+    # TODO: this gets slower and slower with each call.
+    a = time.time()
+    summary = self.SESSION.run(self.summary_op)
+
+    # TODO: there must be a better way to do this. Otherwise sometimes a file
+    #       isn't available. Also breaks if you want two images at once. Fast
+    #       enough, but people might request a tensor that doesn't exist.
     files = tf.gfile.Glob('{}/events.out.tfevents*'.format(self.PLUGIN_LOGDIR))
     for file in files:
       tf.gfile.Remove(file)
@@ -128,11 +127,19 @@ class Beholder():
     self.WRITER.add_summary(summary)
     self.WRITER.flush()
     self.WRITER.close()
-    print('Time to write summary: {}'.format(e - d))
+    b = time.time()
+    print('Time to write summary: {}'.format(b - a))
 
 
   def update(self):
     mode = self._get_mode()
-    tensors = self._get_tensors(mode)
-    image_tensor = self._tensors_to_image_tensor(tensors)
-    self.write_summary(image_tensor)
+
+    try:
+      self.write_summary()
+    except AttributeError:
+      # TODO: this graph will change when the mode changes. Right now, mode
+      # changes are ignored.
+      tensors = self._get_tensors(mode)
+      image_tensor = self._tensors_to_image_tensor(tensors)
+      self.summary_op = tf.summary.tensor_summary("beholder-ts", image_tensor)
+      self.write_summary()
