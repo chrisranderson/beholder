@@ -8,12 +8,19 @@ licenses(["notice"])  # Apache 2.0
 exports_files(["LICENSE"])
 
 py_library(
+  name = "image_util",
+  srcs = ["image_util.py"],
+)
+
+py_library(
   name = "beholder",
   srcs = ["beholder.py"],
   deps = [
+    ":image_util",
     "//tensorboard/backend/event_processing:plugin_asset_util",
   ],
 )
+
 
 py_library(
   name = "beholder_plugin",

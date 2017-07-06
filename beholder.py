@@ -3,6 +3,7 @@ from collections import deque
 import tensorflow as tf
 
 from tensorboard.backend.event_processing import plugin_asset_util as pau
+import tensorboard.plugins.beholder.image_util as image_util
 
 
 PARAMETERS = 'parameters'
@@ -37,11 +38,10 @@ class Beholder():
                                         max_queue=1,
                                         flush_secs=9999999)
 
-
-
     # TODO: store the version with the most computation already done.
     self.tensors_over_time = deque([], variance_duration)
     self.summary_op = None
+
 
   def _get_mode(self):
     try:
@@ -68,68 +68,14 @@ class Beholder():
     return mode_options[mode]()
 
 
-  def _tensors_to_image_tensor(self, tensors):
-
-    global_min = tf.reduce_min([tf.reduce_min(tensor) for tensor in tensors])
-    global_max = tf.reduce_max([tf.reduce_max(tensor) for tensor in tensors])
-    column_width = (IMAGE_WIDTH / len(tensors))
-
-    ###
-
-    def reshape_tensor(tensor):
-      tensor = tf.squeeze(tf.contrib.layers.flatten(tf.expand_dims(tensor, 0)))
-
-      element_count = tf.to_float(tf.size(tensor))
-      product = column_width * element_count
-      columns = tf.ceil(tf.sqrt(product / IMAGE_HEIGHT))
-      rows = tf.floor(element_count / columns)
-
-      rows = tf.to_int32(rows)
-      columns = tf.to_int32(columns)
-
-      # Truncate whatever remaining values there are that don't fit. Hopefully,
-      # it doesn't matter that the last few (< column count) aren't there.
-      return tf.reshape(tensor[:rows * columns], (1, rows, columns, 1))
-
-    def scale_for_display(tensor):
-
-      if self.SCALING_SCOPE == TENSOR:
-        minimum = tf.reduce_min(tensor)
-        maximum = tf.reduce_max(tensor - minimum)
-
-      elif self.SCALING_SCOPE == NETWORK:
-        minimum = global_min
-        maximum = global_max
-
-      tensor -= minimum
-      return tensor * (255 / maximum)
-
-    ###
-
-    reshaped_tensors = [reshape_tensor(tensor) for tensor in tensors]
-    image_scaled_tensors = [scale_for_display(tensor)
-                            for tensor in reshaped_tensors]
-    final_tensors = [tf.squeeze(tf.image.resize_nearest_neighbor(
-        tensor,
-        [tf.to_int32(IMAGE_HEIGHT), tf.to_int32(column_width)]
-    ))
-                     for tensor in image_scaled_tensors]
-
-
-    # return tf.random_uniform((600, 800), minval=0, maxval=255)
-    return tf.concat(final_tensors, axis=1)
-
-
   def write_summary(self):
     summary = self.SESSION.run(self.summary_op)
-
 
     # TODO: Hacky. Sometimes the file could be missing. How can we ensure there
     # is always exactly one complete file?
     files = tf.gfile.Glob('{}/events.out.tfevents*'.format(self.PLUGIN_LOGDIR))
     for file in files:
       tf.gfile.Remove(file)
-
 
     self.WRITER.reopen()
     self.WRITER.add_summary(summary)
@@ -146,6 +92,9 @@ class Beholder():
       # TODO: this graph will change when the mode changes. Right now, mode
       # changes are ignored.
       tensors = self._get_tensors(mode)
-      image_tensor = self._tensors_to_image_tensor(tensors)
+      image_tensor = image_util.tensors_to_image_tensor(tensors,
+                                                        self.SCALING_SCOPE,
+                                                        IMAGE_HEIGHT,
+                                                        IMAGE_WIDTH)
       self.summary_op = tf.summary.tensor_summary(TAG_NAME, image_tensor)
       self.write_summary()
