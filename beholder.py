@@ -1,15 +1,16 @@
 from collections import deque
-import time
 
 import tensorflow as tf
 
 from tensorboard.backend.event_processing import plugin_asset_util as pau
 
-PLUGIN_NAME = 'beholder'
 
 PARAMETERS = 'parameters'
 TENSOR = 'tensor'
 NETWORK = 'network'
+
+PLUGIN_NAME = 'beholder'
+TAG_NAME = 'beholder-frame'
 
 IMAGE_HEIGHT = 600.0
 IMAGE_WIDTH = (IMAGE_HEIGHT * (4.0/3.0))
@@ -37,8 +38,10 @@ class Beholder():
                                         flush_secs=9999999)
 
 
+
     # TODO: store the version with the most computation already done.
     self.tensors_over_time = deque([], variance_duration)
+    self.summary_op = None
 
   def _get_mode(self):
     try:
@@ -71,6 +74,8 @@ class Beholder():
     global_max = tf.reduce_max([tf.reduce_max(tensor) for tensor in tensors])
     column_width = (IMAGE_WIDTH / len(tensors))
 
+    ###
+
     def reshape_tensor(tensor):
       tensor = tf.squeeze(tf.contrib.layers.flatten(tf.expand_dims(tensor, 0)))
 
@@ -99,6 +104,8 @@ class Beholder():
       tensor -= minimum
       return tensor * (255 / maximum)
 
+    ###
+
     reshaped_tensors = [reshape_tensor(tensor) for tensor in tensors]
     image_scaled_tensors = [scale_for_display(tensor)
                             for tensor in reshaped_tensors]
@@ -108,38 +115,37 @@ class Beholder():
     ))
                      for tensor in image_scaled_tensors]
 
+
+    # return tf.random_uniform((600, 800), minval=0, maxval=255)
     return tf.concat(final_tensors, axis=1)
 
 
   def write_summary(self):
-    # TODO: this gets slower and slower with each call.
-    a = time.time()
     summary = self.SESSION.run(self.summary_op)
 
-    # TODO: there must be a better way to do this. Otherwise sometimes a file
-    #       isn't available. Also breaks if you want two images at once. Fast
-    #       enough, but people might request a tensor that doesn't exist.
+
+    # TODO: Hacky. Sometimes the file could be missing. How can we ensure there
+    # is always exactly one complete file?
     files = tf.gfile.Glob('{}/events.out.tfevents*'.format(self.PLUGIN_LOGDIR))
     for file in files:
       tf.gfile.Remove(file)
+
 
     self.WRITER.reopen()
     self.WRITER.add_summary(summary)
     self.WRITER.flush()
     self.WRITER.close()
-    b = time.time()
-    print('Time to write summary: {}'.format(b - a))
 
-
+  # TODO: allow people to use their own image
   def update(self):
     mode = self._get_mode()
 
-    try:
+    if self.summary_op is not None:
       self.write_summary()
-    except AttributeError:
+    else:
       # TODO: this graph will change when the mode changes. Right now, mode
       # changes are ignored.
       tensors = self._get_tensors(mode)
       image_tensor = self._tensors_to_image_tensor(tensors)
-      self.summary_op = tf.summary.tensor_summary("beholder-ts", image_tensor)
+      self.summary_op = tf.summary.tensor_summary(TAG_NAME, image_tensor)
       self.write_summary()
