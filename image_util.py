@@ -1,55 +1,52 @@
-import tensorflow as tf
+from math import ceil, floor, sqrt
 
+import cv2
+import numpy as np
 
-def tensors_to_image_tensor(tensors, scaling_scope, image_height, image_width):
+def global_extrema(arrays):
+  return min([x.min() for x in arrays]), max([x.max() for x in arrays])
 
-  global_min = tf.reduce_min([tf.reduce_min(tensor) for tensor in tensors])
-  global_max = tf.reduce_max([tf.reduce_max(tensor) for tensor in tensors])
-  column_width = (image_width / len(tensors))
+def arrays_to_image(arrays, scaling_scope, image_height, image_width):
+  global_min, global_max = global_extrema(arrays)
+  column_width = (image_width / len(arrays))
 
+  def reshape_array(array):
+    array = np.ravel(array)
 
-  def reshape_tensor(tensor):
-    tensor = tf.squeeze(tf.contrib.layers.flatten(tf.expand_dims(tensor, 0)))
-
-    element_count = tf.to_float(tf.size(tensor))
-    product = column_width * element_count
-    columns = tf.ceil(tf.sqrt(product / image_height))
-    rows = tf.floor(element_count / columns)
-
-    rows = tf.to_int32(rows)
-    columns = tf.to_int32(columns)
+    element_count = np.prod(array.shape)
+    columns = int(ceil(sqrt((column_width * element_count) / image_height)))
+    rows = int(floor(element_count / columns))
 
     # Truncate whatever remaining values there are that don't fit. Hopefully,
     # it doesn't matter that the last few (< column count) aren't there.
-    return tf.reshape(tensor[:rows * columns], (1, rows, columns, 1))
+    return np.reshape(array[:rows * columns], (rows, columns))
 
+  reshaped_arrays = [reshape_array(array) for array in arrays]
 
-  reshaped_tensors = [reshape_tensor(tensor) for tensor in tensors]
-  image_scaled_tensors = [scale_for_display(tensor,
-                                            scaling_scope,
-                                            global_min,
-                                            global_max)
-                          for tensor in reshaped_tensors]
-  final_tensors = [tf.squeeze(tf.image.resize_nearest_neighbor(
-      tensor,
-      [tf.to_int32(image_height), tf.to_int32(column_width)]
-  ))
-                   for tensor in image_scaled_tensors]
+  image_scaled_arrays = [scale_for_display(array,
+                                           scaling_scope,
+                                           global_min,
+                                           global_max)
+                         for array in reshaped_arrays]
 
+  final_arrays = [cv2.resize(array,
+                             (column_width, image_height),
+                             interpolation=cv2.INTER_NEAREST)
+                  for array in image_scaled_arrays]
 
   # return tf.random_uniform((600, 800), minval=0, maxval=255)
-  return tf.concat(final_tensors, axis=1)
+  return np.hstack(final_arrays).astype(np.uint8)
 
 
-def scale_for_display(tensor, scaling_scope, global_min, global_max):
+def scale_for_display(array, scaling_scope, global_min, global_max):
 
-  if scaling_scope == 'tensor':
-    minimum = tf.reduce_min(tensor)
-    maximum = tf.reduce_max(tensor - minimum)
+  if scaling_scope == 'layer':
+    minimum = array.min()
+    maximum = (array - minimum).max()
 
   elif scaling_scope == 'network':
     minimum = global_min
     maximum = global_max
 
-  tensor -= minimum
-  return tensor * (255 / maximum)
+  array -= minimum
+  return array * (255 / maximum)

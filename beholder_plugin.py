@@ -29,10 +29,10 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
   def __init__(self, context):
     self._MULTIPLEXER = context.multiplexer
-    self._LOGDIR_ROOT = context.logdir
-    self._PLUGIN_LOGDIR = pau.PluginDirectory(self._LOGDIR_ROOT,
-                                              _PLUGIN_PREFIX_ROUTE)
-
+    plugin_logdir = pau.PluginDirectory(context.logdir,
+                                        _PLUGIN_PREFIX_ROUTE)
+    self._SUMMARY_PATH = '{}/{}'.format(plugin_logdir,
+                                        beholder.SUMMARY_FILENAME)
 
   def get_plugin_apps(self):
     return {
@@ -42,57 +42,33 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
 
   def is_active(self):
-    return bool(self._MULTIPLEXER) and any(self._runs_and_tags().values())
+    return tf.gfile.Exists(self._SUMMARY_PATH)
 
 
-  def _reload_beholder_event(self):
-    # TODO: Hacky.
-    pattern = '{}/events.out.tfevents*'.format(self._PLUGIN_LOGDIR)
-    file_path = tf.gfile.Glob(pattern)[0]
-    print('file_path', file_path)
-    accumulator = self._MULTIPLEXER.GetAccumulator(RUN_NAME)
+  def _get_image_from_summary(self):
+    with open(self._SUMMARY_PATH, 'rb') as file:
+      summary_string = file.read()
 
-    with tf.errors.raise_exception_on_not_ok_status() as status:
-      reader = tf.pywrap_tensorflow.PyRecordReader_New(
-          tf.compat.as_bytes(file_path), 0, tf.compat.as_bytes(''), status)
-      try:
-        reader.GetNext(status)
-      except (tf.errors.DataLossError, tf.errors.OutOfRangeError):
-        print('Couldn\'t reload beholder frame.')
-        return
-
-    event = tf.Event()
-    event.ParseFromString(reader.record())
-
-    # event = next(event_file_loader.EventFileLoader(file).Load())
-    accumulator._ProcessEvent(event)
-
-
-
-  def _runs_and_tags(self):
-    '''
-    Returns runs and tags for this plugin.
-    '''
-    return {
-        run_name: run_data[event_accumulator.TENSORS]
-        for (run_name, run_data) in self._MULTIPLEXER.Runs().items()
-        if (run_name == RUN_NAME)
-    }
+    summary_proto = tf.Summary()
+    summary_proto.ParseFromString(summary_string)
+    tensor_proto = summary_proto.value[0].tensor
+    return tf.contrib.util.make_ndarray(tensor_proto).astype(np.uint8)
 
 
   @wrappers.Request.application
   def _serve_tags(self, request):
-    runs_and_tags = self._runs_and_tags()
+    # TODO: Since I don't use this system... ?
+    runs_and_tags = {
+        run_name: run_data[event_accumulator.TENSORS]
+        for (run_name, run_data) in self._MULTIPLEXER.Runs().items()
+        if (run_name == RUN_NAME)
+    }
     return http_util.Respond(request, runs_and_tags, 'application/json')
 
 
   @wrappers.Request.application
   def _serve_beholder_frame(self, request):
-    print('\nrequest', request)
-    self._reload_beholder_event()
-    tensor = self._MULTIPLEXER.Tensors(RUN_NAME, TAG_NAME)[0]
-    array = tf.contrib.util.make_ndarray(tensor.tensor_proto).astype(np.uint8)
-    print('array.mean()', array.mean())
+    array = self._get_image_from_summary()
     image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
     bytes_buffer = io.BytesIO()
     image.save(bytes_buffer, 'PNG')

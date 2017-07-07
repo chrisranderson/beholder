@@ -1,46 +1,45 @@
 from collections import deque
 
+import numpy as np
 import tensorflow as tf
 
 from tensorboard.backend.event_processing import plugin_asset_util as pau
-import tensorboard.plugins.beholder.image_util as image_util
+import tensorboard.plugins.beholder.image_util as im_util
 
 
+PARAMETER_VARIANCE = 'parameter_variance'
 PARAMETERS = 'parameters'
-TENSOR = 'tensor'
-NETWORK = 'network'
+
+SCALE_LAYER = 'layer'
+SCALE_NETWORK = 'network'
 
 PLUGIN_NAME = 'beholder'
 TAG_NAME = 'beholder-frame'
+SUMMARY_FILENAME = 'frame.summary'
 
-IMAGE_HEIGHT = 600.0
-IMAGE_WIDTH = (IMAGE_HEIGHT * (4.0/3.0))
+IMAGE_HEIGHT = 600
+IMAGE_WIDTH = int(IMAGE_HEIGHT * (4.0/3.0))
 
-# TODO: should some of these methods be pulled out into something else?
 
 class Beholder():
 
-  # TODO: stuff from other plugins: multiplexer, context argument
   def __init__(
       self,
       session,
       logdir,
       variance_duration=5,
-      scaling_scope=TENSOR):
+      scaling_scope=SCALE_LAYER):
 
     self.LOGDIR_ROOT = logdir
     self.PLUGIN_LOGDIR = pau.PluginDirectory(logdir, PLUGIN_NAME)
     self.SCALING_SCOPE = scaling_scope
     self.SESSION = session
     self.VARIANCE_DURATION = variance_duration
-    # flush_secs is set so high because I will explicitly tell it when to write.
-    self.WRITER = tf.summary.FileWriter(self.PLUGIN_LOGDIR,
-                                        max_queue=1,
-                                        flush_secs=9999999)
 
-    # TODO: store the version with the most computation already done.
-    self.tensors_over_time = deque([], variance_duration)
+    self.frames_over_time = deque([], variance_duration)
+    self.frame_placeholder = None
     self.summary_op = None
+    self.variables_op = tf.trainable_variables()
 
 
   def _get_mode(self):
@@ -50,51 +49,61 @@ class Beholder():
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
 
       with open(self.PLUGIN_LOGDIR + '/mode', 'w') as mode_file:
-        mode_file.write(PARAMETERS)
+        mode_file.write(PARAMETER_VARIANCE)
 
       return pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'mode')
 
 
-  def _get_tensors(self, mode):
+  def _get_display_frame(self, mode):
+    arrays = [self.SESSION.run(x) for x in self.variables_op]
+    global_min, global_max = im_util.global_extrema(arrays)
+    absolute_frame = im_util.arrays_to_image(arrays, self.SCALING_SCOPE,
+                                             IMAGE_HEIGHT, IMAGE_WIDTH)
+
+    self.frames_over_time.append(absolute_frame)
 
     def get_parameters():
-      return tf.trainable_variables()
+      return absolute_frame
+
+    def get_parameter_variance():
+      stacked = np.dstack(self.frames_over_time)
+      variance = np.var(stacked, axis=2)
+      scaled_frame = im_util.scale_for_display(variance, self.SCALING_SCOPE,
+                                               global_min, global_max)
+      return scaled_frame
+
 
     mode_options = {
         # TODO: add a parameter that allows people to set their own function?
         PARAMETERS: get_parameters,
+        PARAMETER_VARIANCE: get_parameter_variance,
     }
 
     return mode_options[mode]()
 
 
-  def write_summary(self):
-    summary = self.SESSION.run(self.summary_op)
+  def _write_summary(self, frame):
+    summary = self.SESSION.run(self.summary_op, feed_dict={
+        self.frame_placeholder: frame
+    })
 
-    # TODO: Hacky. Sometimes the file could be missing. How can we ensure there
-    # is always exactly one complete file?
-    files = tf.gfile.Glob('{}/events.out.tfevents*'.format(self.PLUGIN_LOGDIR))
-    for file in files:
-      tf.gfile.Remove(file)
+    path = '{}/{}'.format(self.PLUGIN_LOGDIR, SUMMARY_FILENAME)
 
-    self.WRITER.reopen()
-    self.WRITER.add_summary(summary)
-    self.WRITER.flush()
-    self.WRITER.close()
+    with open(path, 'wb') as file:
+      file.write(summary)
 
-  # TODO: allow people to use their own image
-  def update(self):
+
+  def update(self, frame=None):
     mode = self._get_mode()
 
+    if frame is None:
+      frame = self._get_display_frame(mode)
+
     if self.summary_op is not None:
-      self.write_summary()
+      self._write_summary(frame)
     else:
-      # TODO: this graph will change when the mode changes. Right now, mode
-      # changes are ignored.
-      tensors = self._get_tensors(mode)
-      image_tensor = image_util.tensors_to_image_tensor(tensors,
-                                                        self.SCALING_SCOPE,
-                                                        IMAGE_HEIGHT,
-                                                        IMAGE_WIDTH)
-      self.summary_op = tf.summary.tensor_summary(TAG_NAME, image_tensor)
-      self.write_summary()
+      self.frame_placeholder = tf.placeholder(tf.float32,
+                                              [IMAGE_HEIGHT, IMAGE_WIDTH])
+      self.summary_op = tf.summary.tensor_summary(TAG_NAME,
+                                                  self.frame_placeholder)
+      self._write_summary(frame)
