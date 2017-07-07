@@ -10,7 +10,6 @@ import tensorflow as tf
 from werkzeug import wrappers
 
 from tensorboard.backend import http_util
-from tensorboard.backend.event_processing import event_accumulator
 from tensorboard.backend.event_processing import plugin_asset_util as pau
 from tensorboard.plugins import base_plugin
 from tensorboard.plugins.beholder import beholder
@@ -33,6 +32,10 @@ class BeholderPlugin(base_plugin.TBPlugin):
                                         _PLUGIN_PREFIX_ROUTE)
     self._SUMMARY_PATH = '{}/{}'.format(plugin_logdir,
                                         beholder.SUMMARY_FILENAME)
+    self.most_recent_frame = np.zeros((beholder.IMAGE_HEIGHT,
+                                       beholder.IMAGE_WIDTH))
+    self.served_new = 0
+    self.served_old = 0.0001
 
   def get_plugin_apps(self):
     return {
@@ -46,28 +49,41 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
 
   def _get_image_from_summary(self):
-    with open(self._SUMMARY_PATH, 'rb') as file:
-      summary_string = file.read()
+    try:
+      with open(self._SUMMARY_PATH, 'rb') as file:
+        summary_string = file.read()
 
-    summary_proto = tf.Summary()
-    summary_proto.ParseFromString(summary_string)
-    tensor_proto = summary_proto.value[0].tensor
-    return tf.contrib.util.make_ndarray(tensor_proto).astype(np.uint8)
+      summary_proto = tf.Summary()
+      summary_proto.ParseFromString(summary_string)
+      tensor_proto = summary_proto.value[0].tensor
+    # TODO: Probably not a great idea to catch all errors. :)
+    except:
+      self.served_old += 1
+      return self.most_recent_frame
+
+    frame = tf.contrib.util.make_ndarray(tensor_proto).astype(np.uint8)
+
+    if np.all(frame == self.most_recent_frame):
+      self.served_old += 1
+    else:
+      self.served_new += 1
+
+    self.most_recent_frame = frame
+    return frame
 
 
   @wrappers.Request.application
   def _serve_tags(self, request):
-    # TODO: Since I don't use this system... ?
-    runs_and_tags = {
-        run_name: run_data[event_accumulator.TENSORS]
-        for (run_name, run_data) in self._MULTIPLEXER.Runs().items()
-        if (run_name == RUN_NAME)
-    }
-    return http_util.Respond(request, runs_and_tags, 'application/json')
+    if self.is_active:
+      runs_and_tags = {RUN_NAME: {'tensors': [TAG_NAME]}}
+    else:
+      runs_and_tags = {}
 
 
   @wrappers.Request.application
   def _serve_beholder_frame(self, request):
+    # print('percent new frames',
+    #        self.served_new / (self.served_old + self.served_new))
     array = self._get_image_from_summary()
     image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
     bytes_buffer = io.BytesIO()

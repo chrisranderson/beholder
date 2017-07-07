@@ -29,23 +29,43 @@ limitations under the License.
 <dom-module id="tf-beholder-video">
   <template>
   
-    <video></video>
+    <img src='[[_imageURL]]'></img>
     
     <style>
-      
+      img {
+        height: 100%;
+      }
     </style>
   </template>
 
   <script>
     "use strict";
-    import {Canceller} from "../tf-backend/canceller.js";
-    import {getRouter} from "../tf-backend/router.js";
-    import * as urlPathHelpers from "../tf-backend/urlPathHelpers.js";
+
+    import {RequestManager} from '../tf-backend/requestManager.js';
+    import {getRouter} from '../tf-backend/router.js';
+
+    const imageURL = getRouter().pluginRoute('beholder', '/beholder-frame.png');
+    const FRAMES_PER_SECOND = 10
 
     Polymer({
       is: "tf-beholder-video",
       properties: {
-       
+        _requestManager: {
+          type: Object,
+          value: () => new RequestManager(),
+        },
+
+        _imageURL: String
+      },
+
+      _set_time() {
+        this.set('_imageURL', imageURL + '?t=' + new Date().getTime())
+      },
+
+      // TODO: automatically adjust FRAMES_PER_SECOND depending on whether
+      // the frames I'm receiving are unique or not. Add a FPS maximum.
+      ready() {
+        setInterval(this._set_time.bind(this), 1000/FRAMES_PER_SECOND)
       },
      
     });

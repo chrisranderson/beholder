@@ -40,7 +40,7 @@ limitations under the License.
         </div>
       </div>
       <div class="center">
-        <template is="dom-if" if="[[_dataNotFound]]">
+<!--         <template is="dom-if" if="[[_dataNotFound]]">
           <div class="no-data-warning">
             <h3>No beholder tags were found.</h3>
             <p>Probable causes:</p>
@@ -58,16 +58,18 @@ limitations under the License.
             <a href="https://github.com/tensorflow/tensorboard/blob/master/README.md#my-tensorboard-isnt-showing-any-data-whats-wrong">the section of the README devoted to missing data problems</a>
             and consider filing an issue on GitHub.
           </div>
-        </template>
-        <template is="dom-if" if="[[!_dataNotFound]]">
-          <tf-beholder-video />
-        </template>
+        </template> -->
+        <!-- <template is="dom-if" if="[[!_dataNotFound]]"> -->
+        <tf-beholder-video />
 
         
       </div>
     </tf-dashboard-layout>
     <style include="dashboard-style"></style>
     <style>
+      .center {
+        height: 100%;
+      }
       .no-data-warning {
         max-width: 540px;
         margin: 80px auto 0 auto;
@@ -105,10 +107,8 @@ limitations under the License.
       ready() {
         this.reload();
       },
-      reload() {
-        this._fetchTags().then(() => {
-          this._reloadImages();
-        });
+      reload(){
+        this._fetchTags()
       },
       _fetchTags() {
         const url = getRouter().pluginRoute('beholder', '/tags');
@@ -122,11 +122,8 @@ limitations under the License.
           this.set('_runToTag', runToTag);
         });
       },
-      _reloadImages() {
-        // this.querySelectorAll('tf-image-loader').forEach(image => {
-        //   image.reload();
         // });
-      },
+      
 
       _makeCategories(runToTag, selectedRuns, tagGroupRegexes) {
         return categorizeRunTagCombinations(
