@@ -1,4 +1,5 @@
 from collections import deque
+import json
 
 import numpy as np
 import tensorflow as tf
@@ -22,6 +23,11 @@ SUMMARY_FILENAME = 'frame.summary'
 
 IMAGE_HEIGHT = 600
 IMAGE_WIDTH = int(IMAGE_HEIGHT * (4.0/3.0))
+
+DEFAULT_CONFIG = {
+    'values': PARAMETERS,
+    'mode': VARIANCE,
+}
 
 
 class Beholder():
@@ -64,19 +70,21 @@ class Beholder():
 
   def _get_config(self):
     try:
-      return pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
-    except KeyError:
+      json_string = pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
+      print('json_string', json_string)
+      return json.loads(json_string)
+    except (KeyError, ValueError):
       print('Could not read config file. Creating a config file.')
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
 
       with open(self.PLUGIN_LOGDIR + '/config', 'w') as config_file:
-        config_file.write('parameters-variance')
+        config_file.write(json.dumps(DEFAULT_CONFIG))
 
-      return pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
+      return DEFAULT_CONFIG
 
 
   def _get_display_frame(self, config, arrays=None):
-    values, mode = config.split('-')
+    values, mode = config['values'], config['mode']
 
     if values != self.old_values:
       self.frames_over_time.clear()

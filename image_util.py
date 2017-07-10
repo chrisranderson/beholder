@@ -34,8 +34,10 @@ def arrays_to_image(arrays, scaling_scope, image_height, image_width):
                              interpolation=cv2.INTER_NEAREST)
                   for array in image_scaled_arrays]
 
-  # return tf.random_uniform((600, 800), minval=0, maxval=255)
-  return np.hstack(final_arrays).astype(np.uint8)
+  # Fixes little off-by-one errors after things are concatenated.
+  return cv2.resize(np.hstack(final_arrays).astype(np.uint8),
+                    (image_width, image_height),
+                    interpolation=cv2.INTER_NEAREST)
 
 
 def scale_for_display(array, scaling_scope, global_min, global_max):

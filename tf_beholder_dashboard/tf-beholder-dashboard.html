@@ -39,8 +39,7 @@ limitations under the License.
           <div class="title">Values</div>
           <paper-radio-group
             id="valuesSelector"
-            selected="{{_values}}"
-            >
+            selected="{{_values}}">
             <paper-radio-button name="parameters">parameters</paper-radio-button>
             <paper-radio-button name="custom">custom</paper-radio-button>
           </paper-radio-group>
@@ -50,8 +49,7 @@ limitations under the License.
           <div class="title">Mode</div>
           <paper-radio-group
             id="modeSelector"
-            selected="{{_mode}}"
-          >
+            selected="{{_mode}}">
             <paper-radio-button name="current">current</paper-radio-button>
             <paper-radio-button name="variance">variance</paper-radio-button>
           </paper-radio-group>
@@ -168,12 +166,19 @@ limitations under the License.
       },
 
       _configChanged() {
+        // We aren't finished initializing yet.
+        if (typeof this._values === 'undefined' 
+            || typeof this._mode === 'undefined') {
+          return
+        }
 
-        const config = this._values + '-' + this._mode
-        console.log('config', config)
-        const url = getRouter().pluginRoute('beholder', '/change-config?config='+config);
+        const url = getRouter().pluginRoute('beholder', '/change-config');
+        const postData = {
+          values: this._values,
+          mode: this._mode
+        }
 
-        this._requestManager.request(url).then(response => {
+        this._requestManager.request(url, postData).then(response => {
           console.log('response', response.config)
         });
       },
