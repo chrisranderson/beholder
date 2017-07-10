@@ -1,7 +1,5 @@
 # Beholder
 
-![beholder demo video](https://raw.githubusercontent.com/chrisranderson/beholder/master/demo.gif)
-
 Beholder is a TensorBoard plugin for visualizing frames of a video while your model trains. Before you begin training, initialize:
 
     visualizer = Beholder(session=sess,
