@@ -27,6 +27,7 @@ IMAGE_WIDTH = int(IMAGE_HEIGHT * (4.0/3.0))
 DEFAULT_CONFIG = {
     'values': PARAMETERS,
     'mode': VARIANCE,
+    'scaling': SCALE_LAYER
 }
 
 
@@ -36,12 +37,10 @@ class Beholder():
       self,
       session,
       logdir,
-      variance_duration=5,
-      scaling_scope=SCALE_LAYER):
+      variance_duration=5):
 
     self.LOGDIR_ROOT = logdir
     self.PLUGIN_LOGDIR = pau.PluginDirectory(logdir, PLUGIN_NAME)
-    self.SCALING_SCOPE = scaling_scope
     self.SESSION = session
     self.VARIANCE_DURATION = variance_duration
 
@@ -84,7 +83,7 @@ class Beholder():
 
 
   def _get_display_frame(self, config, arrays=None):
-    values, mode = config['values'], config['mode']
+    values, mode, scaling = config['values'], config['mode'], config['scaling']
 
     if values != self.old_values:
       self.frames_over_time.clear()
@@ -95,7 +94,7 @@ class Beholder():
       arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
 
     global_min, global_max = im_util.global_extrema(arrays)
-    absolute_frame = im_util.arrays_to_image(arrays, self.SCALING_SCOPE,
+    absolute_frame = im_util.arrays_to_image(arrays, scaling,
                                              IMAGE_HEIGHT, IMAGE_WIDTH)
 
     self.frames_over_time.append(absolute_frame)
@@ -106,7 +105,7 @@ class Beholder():
     elif mode == VARIANCE:
       stacked = np.dstack(self.frames_over_time)
       variance = np.var(stacked, axis=2)
-      final_frame = im_util.scale_for_display(variance, self.SCALING_SCOPE,
+      final_frame = im_util.scale_for_display(variance, scaling,
                                               global_min, global_max)
 
     return final_frame
