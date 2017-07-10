@@ -7,8 +7,11 @@ from tensorboard.backend.event_processing import plugin_asset_util as pau
 import tensorboard.plugins.beholder.image_util as im_util
 
 
-PARAMETER_VARIANCE = 'parameter_variance'
+CUSTOM = 'custom'
 PARAMETERS = 'parameters'
+
+CURRENT = 'current'
+VARIANCE = 'variance'
 
 SCALE_LAYER = 'layer'
 SCALE_NETWORK = 'network'
@@ -39,47 +42,66 @@ class Beholder():
     self.frames_over_time = deque([], variance_duration)
     self.frame_placeholder = None
     self.summary_op = None
-    self.variables_op = tf.trainable_variables()
+    self.old_values = None
 
 
-  def _get_mode(self):
+  @staticmethod
+  def gradient_helper(optimizer, loss, var_list=None):
+    '''
+    A helper to get the gradients out at each step.
+
+    Returns: the tensors and the train_step op
+    '''
+    if var_list is None:
+      var_list = tf.trainable_variables()
+
+    grads_and_vars = optimizer.compute_gradients(loss, var_list=var_list)
+    grads = [pair[0] for pair in grads_and_vars]
+
+    return grads, optimizer.apply_gradients(grads_and_vars)
+
+
+
+  def _get_config(self):
     try:
-      return pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'mode')
+      return pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
     except KeyError:
+      print('Could not read config file. Creating a config file.')
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
 
-      with open(self.PLUGIN_LOGDIR + '/mode', 'w') as mode_file:
-        mode_file.write(PARAMETER_VARIANCE)
+      with open(self.PLUGIN_LOGDIR + '/config', 'w') as config_file:
+        config_file.write('parameters-variance')
 
-      return pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'mode')
+      return pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
 
 
-  def _get_display_frame(self, mode):
-    arrays = [self.SESSION.run(x) for x in self.variables_op]
+  def _get_display_frame(self, config, arrays=None):
+    values, mode = config.split('-')
+
+    if values != self.old_values:
+      self.frames_over_time.clear()
+
+    self.old_values = values
+
+    if values != CUSTOM:
+      arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
+
     global_min, global_max = im_util.global_extrema(arrays)
     absolute_frame = im_util.arrays_to_image(arrays, self.SCALING_SCOPE,
                                              IMAGE_HEIGHT, IMAGE_WIDTH)
 
     self.frames_over_time.append(absolute_frame)
 
-    def get_parameters():
-      return absolute_frame
+    if mode == CURRENT:
+      final_frame = absolute_frame
 
-    def get_parameter_variance():
+    elif mode == VARIANCE:
       stacked = np.dstack(self.frames_over_time)
       variance = np.var(stacked, axis=2)
-      scaled_frame = im_util.scale_for_display(variance, self.SCALING_SCOPE,
-                                               global_min, global_max)
-      return scaled_frame
+      final_frame = im_util.scale_for_display(variance, self.SCALING_SCOPE,
+                                              global_min, global_max)
 
-
-    mode_options = {
-        # TODO: add a parameter that allows people to set their own function?
-        PARAMETERS: get_parameters,
-        PARAMETER_VARIANCE: get_parameter_variance,
-    }
-
-    return mode_options[mode]()
+    return final_frame
 
 
   def _write_summary(self, frame):
@@ -93,11 +115,13 @@ class Beholder():
       file.write(summary)
 
 
-  def update(self, frame=None):
-    mode = self._get_mode()
+  def update(self, arrays=None, frame=None):
+    config = self._get_config()
+
+    print('config', config)
 
     if frame is None:
-      frame = self._get_display_frame(mode)
+      frame = self._get_display_frame(config, arrays)
 
     if self.summary_op is not None:
       self._write_summary(frame)

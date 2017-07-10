@@ -19,6 +19,7 @@ TAG_NAME = beholder.TAG_NAME
 # TODO: external changes
 _PLUGIN_PREFIX_ROUTE = beholder.PLUGIN_NAME
 FRAME_ROUTE = '/beholder-frame.png'
+CONFIG_ROUTE = '/change-config'
 RUN_NAME = 'plugins/{}'.format(_PLUGIN_PREFIX_ROUTE)
 
 
@@ -32,6 +33,8 @@ class BeholderPlugin(base_plugin.TBPlugin):
                                         _PLUGIN_PREFIX_ROUTE)
     self._SUMMARY_PATH = '{}/{}'.format(plugin_logdir,
                                         beholder.SUMMARY_FILENAME)
+    self._CONFIG_PATH = '{}/{}'.format(plugin_logdir,
+                                       'config')
     self.most_recent_frame = np.zeros((beholder.IMAGE_HEIGHT,
                                        beholder.IMAGE_WIDTH))
     self.served_new = 0
@@ -40,6 +43,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
   def get_plugin_apps(self):
     return {
         FRAME_ROUTE: self._serve_beholder_frame,
+        CONFIG_ROUTE: self._serve_change_config,
         '/tags': self._serve_tags
     }
 
@@ -78,6 +82,23 @@ class BeholderPlugin(base_plugin.TBPlugin):
       runs_and_tags = {RUN_NAME: {'tensors': [TAG_NAME]}}
     else:
       runs_and_tags = {}
+
+    return http_util.Respond(request,
+                             runs_and_tags,
+                             'application/json')
+
+
+  @wrappers.Request.application
+  def _serve_change_config(self, request):
+    config = request.args.get('config')
+
+    with open(self._CONFIG_PATH, 'w') as file:
+      print('server writing config', config)
+      file.write(config)
+
+    return http_util.Respond(request,
+                             {'config': config},
+                             'application/json')
 
 
   @wrappers.Request.application

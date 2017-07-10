@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../tf-backend/tf-backend.html">
@@ -32,7 +34,31 @@ limitations under the License.
     <paper-dialog with-backdrop id="actual-image-size-dialog"></paper-dialog>
     <tf-dashboard-layout>
       <div class="sidebar">
+
         <div class="sidebar-section">
+          <div class="title">Values</div>
+          <paper-radio-group
+            id="valuesSelector"
+            selected="{{_values}}"
+            >
+            <paper-radio-button name="parameters">parameters</paper-radio-button>
+            <paper-radio-button name="custom">custom</paper-radio-button>
+          </paper-radio-group>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="title">Mode</div>
+          <paper-radio-group
+            id="modeSelector"
+            selected="{{_mode}}"
+          >
+            <paper-radio-button name="current">current</paper-radio-button>
+            <paper-radio-button name="variance">variance</paper-radio-button>
+          </paper-radio-group>
+        </div>
+
+        <div class="sidebar-section">
+
           <tf-runs-selector
             id="runs-selector"
             selected-runs="{{_selectedRuns}}"
@@ -74,6 +100,21 @@ limitations under the License.
         max-width: 540px;
         margin: 80px auto 0 auto;
       }
+      .title {
+        font-size: 16px;
+        margin: 8px 5px 8px 0;
+        color: black;
+      }
+      .title small {
+        font-weight: normal;
+      }
+      paper-radio-button {
+        display: block;
+        padding: 5px;
+      }
+      paper-radio-group {
+        margin-top: 5px;
+      }
     </style>
   </template>
   <script>
@@ -102,14 +143,41 @@ limitations under the License.
           value: () => new RequestManager(),
         },
 
+        ////
+
+        _values: {
+          type: String,
+          value: 'parameters',
+          observer: '_configChanged'
+        },
+
+        _mode: {
+          type: String,
+          value: 'variance',
+          observer: '_configChanged'
+        }
+
       },
 
       ready() {
         this.reload();
       },
+
       reload(){
         this._fetchTags()
       },
+
+      _configChanged() {
+
+        const config = this._values + '-' + this._mode
+        console.log('config', config)
+        const url = getRouter().pluginRoute('beholder', '/change-config?config='+config);
+
+        this._requestManager.request(url).then(response => {
+          console.log('response', response.config)
+        });
+      },
+
       _fetchTags() {
         const url = getRouter().pluginRoute('beholder', '/tags');
         return this._requestManager.request(url).then(runToTag => {
@@ -122,8 +190,6 @@ limitations under the License.
           this.set('_runToTag', runToTag);
         });
       },
-        // });
-      
 
       _makeCategories(runToTag, selectedRuns, tagGroupRegexes) {
         return categorizeRunTagCombinations(

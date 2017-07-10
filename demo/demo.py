@@ -32,6 +32,7 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 
 from tensorboard.plugins.beholder import beholder
+Beholder = beholder.Beholder
 
 FLAGS = None
 
@@ -128,8 +129,8 @@ def train():
   tf.summary.scalar('cross_entropy', cross_entropy)
 
   with tf.name_scope('train'):
-    train_step = tf.train.AdamOptimizer(FLAGS.learning_rate).minimize(
-        cross_entropy)
+    optimizer = tf.train.AdamOptimizer(FLAGS.learning_rate)
+    gradients, train_step = Beholder.gradient_helper(optimizer, cross_entropy)
 
   with tf.name_scope('accuracy'):
     with tf.name_scope('correct_prediction'):
@@ -145,7 +146,8 @@ def train():
   test_writer = tf.summary.FileWriter(LOG_DIRECTORY + '/test')
   tf.global_variables_initializer().run()
 
-  visualizer = beholder.Beholder(sess, LOG_DIRECTORY)
+  visualizer = Beholder(session=sess, 
+                        logdir=LOG_DIRECTORY)
 
   # Train the model, and also write summaries.
   # Every 10th step, measure test-set accuracy, and write test summaries
@@ -178,8 +180,8 @@ def train():
     #     train_writer.add_summary(summary, i)
     #     print('Adding run metadata for', i)
     #   else:  # Record a summary
-    summary, _ = sess.run([merged, train_step], feed_dict=feed_dict(True))
-    visualizer.update()
+    summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dict(True))
+    visualizer.update(arrays=gradient_arrays)
     train_writer.add_summary(summary, i)
 
 
