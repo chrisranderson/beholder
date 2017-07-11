@@ -1,6 +1,7 @@
 from collections import deque
 import json
 
+import cv2
 import numpy as np
 import tensorflow as tf
 
@@ -46,7 +47,7 @@ class Beholder():
     self.frames_over_time = deque([], DEFAULT_CONFIG['window_size'])
     self.frame_placeholder = None
     self.summary_op = None
-    self.old_values = None
+    self.old_config = None
 
 
   @staticmethod
@@ -65,11 +66,9 @@ class Beholder():
     return grads, optimizer.apply_gradients(grads_and_vars)
 
 
-
   def _get_config(self):
     try:
       json_string = pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
-      print('json_string', json_string)
       return json.loads(json_string)
     except (KeyError, ValueError):
       print('Could not read config file. Creating a config file.')
@@ -84,45 +83,47 @@ class Beholder():
   def _get_display_frame(self, config, arrays=None):
     values, mode, scaling = config['values'], config['mode'], config['scaling']
 
-    if values != self.old_values:
+    if config != self.old_config:
       self.frames_over_time.clear()
-
-    self.old_values = values
+    self.old_config = config
 
     if values != CUSTOM:
       arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
 
-    global_min, global_max = im_util.global_extrema(arrays)
-    absolute_frame = im_util.arrays_to_image(arrays, scaling,
-                                             IMAGE_HEIGHT, IMAGE_WIDTH)
-
-    self.frames_over_time.append(absolute_frame)
+    columns = im_util.arrays_to_columns(arrays, IMAGE_HEIGHT, IMAGE_WIDTH)
+    self.frames_over_time.append(columns)
 
     if mode == CURRENT:
-      final_frame = absolute_frame
-
+      scaled_columns = im_util.scale_for_display(columns, scaling)
     elif mode == VARIANCE:
-      stacked = np.dstack(self.frames_over_time)
-      variance = np.var(stacked, axis=2)
-      final_frame = im_util.scale_for_display(variance, scaling,
-                                              global_min, global_max)
+      variance_columns = []
 
-    return final_frame
+      for i in range(len(columns)):
+        variance = np.var([columns[i] for columns in self.frames_over_time],
+                          axis=0)
+        variance_columns.append(variance)
+
+      scaled_columns = im_util.scale_for_display(variance_columns, scaling)
+
+    return cv2.resize(np.hstack(scaled_columns).astype(np.uint8),
+                      (IMAGE_WIDTH, IMAGE_HEIGHT),
+                      interpolation=cv2.INTER_NEAREST)
 
 
   def _write_summary(self, frame):
     summary = self.SESSION.run(self.summary_op, feed_dict={
         self.frame_placeholder: frame
     })
-
     path = '{}/{}'.format(self.PLUGIN_LOGDIR, SUMMARY_FILENAME)
 
     with open(path, 'wb') as file:
       file.write(summary)
 
+
   def _update_deque(self, window_size):
     if window_size != self.frames_over_time.maxlen:
       self.frames_over_time = deque(self.frames_over_time, window_size)
+
 
   def update(self, arrays=None, frame=None):
     config = self._get_config()

@@ -3,52 +3,57 @@ from math import ceil, floor, sqrt
 import cv2
 import numpy as np
 
+
 def global_extrema(arrays):
   return min([x.min() for x in arrays]), max([x.max() for x in arrays])
 
-def arrays_to_image(arrays, scaling_scope, image_height, image_width):
-  global_min, global_max = global_extrema(arrays)
+
+def arrays_to_columns(arrays, image_height, image_width):
+  '''
+  Input: unprocessed numpy arrays.
+  Returns: columns of the size that they will appear in the image, not scaled
+           for display. That needs to wait until after variance is computed.
+  '''
   column_width = (image_width / len(arrays))
 
-  def reshape_array(array):
-    array = np.ravel(array)
+  columns = []
 
-    element_count = np.prod(array.shape)
-    columns = int(ceil(sqrt((column_width * element_count) / image_height)))
-    rows = int(floor(element_count / columns))
+  for array in arrays:
+    flattened_array = np.ravel(array)
+
+    element_count = np.prod(flattened_array.shape)
+    col_count = int(ceil(sqrt((column_width * element_count) / image_height)))
+    row_count = int(floor(element_count / col_count))
 
     # Truncate whatever remaining values there are that don't fit. Hopefully,
     # it doesn't matter that the last few (< column count) aren't there.
-    return np.reshape(array[:rows * columns], (rows, columns))
+    columns.append(np.reshape(flattened_array[:row_count * col_count],
+                              (row_count, col_count)))
 
-  reshaped_arrays = [reshape_array(array) for array in arrays]
-
-  image_scaled_arrays = [scale_for_display(array,
-                                           scaling_scope,
-                                           global_min,
-                                           global_max)
-                         for array in reshaped_arrays]
-
-  final_arrays = [cv2.resize(array,
-                             (column_width, image_height),
-                             interpolation=cv2.INTER_NEAREST)
-                  for array in image_scaled_arrays]
-
-  # Fixes little off-by-one errors after things are concatenated.
-  return cv2.resize(np.hstack(final_arrays).astype(np.uint8),
-                    (image_width, image_height),
-                    interpolation=cv2.INTER_NEAREST)
+  return [cv2.resize(column,
+                     (column_width, image_height),
+                     interpolation=cv2.INTER_NEAREST)
+          for column in columns]
 
 
-def scale_for_display(array, scaling_scope, global_min, global_max):
+def scale_for_display(columns, scaling_scope):
+  '''
+  Input: unscaled columns.
+  Returns: columns scaled to [0, 255]
+  '''
+
+  new_columns = []
 
   if scaling_scope == 'layer':
-    minimum = array.min()
-    maximum = (array - minimum).max()
+    for column in columns:
+      column -= column.min()
+      new_columns.append(column * (255 / column.max()))
 
   elif scaling_scope == 'network':
-    minimum = global_min
-    maximum = global_max
+    global_min, global_max = global_extrema(columns)
 
-  array -= minimum
-  return array * (255 / maximum)
+    for column in columns:
+      column -= global_min
+      new_columns.append(column * (255 / global_max))
+
+  return new_columns
