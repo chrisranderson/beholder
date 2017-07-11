@@ -23,7 +23,7 @@ from tensorboard.plugins.beholder import beholder
 TAG_NAME = beholder.TAG_NAME
 
 _PLUGIN_PREFIX_ROUTE = beholder.PLUGIN_NAME
-FRAME_ROUTE = '/beholder-frame.png'
+FRAME_ROUTE = '/beholder-frame'
 CONFIG_ROUTE = '/change-config'
 RUN_NAME = 'plugins/{}'.format(_PLUGIN_PREFIX_ROUTE)
 
@@ -109,19 +109,32 @@ class BeholderPlugin(base_plugin.TBPlugin):
       print('json_string', json_string)
       file.write(json_string)
 
+
     return http_util.Respond(request,
                              {'config': config},
                              'application/json')
 
 
+  def _frame_generator(self):
+    while True:
+      array = self._get_image_from_summary()
+      image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
+      bytes_buffer = io.BytesIO()
+      image.save(bytes_buffer, 'PNG')
+      image_bytes = bytes_buffer.getvalue()
+
+      frame_text = b'--frame\r\n'
+      content_type = b'Content-Type: image/png\r\n\r\n'
+      response_content = frame_text + content_type + image_bytes + b'\r\n\r\n'
+
+      yield response_content
+
+
   @wrappers.Request.application
-  def _serve_beholder_frame(self, request):
+  def _serve_beholder_frame(self):
     # print('percent new frames',
     #        self.served_new / (self.served_old + self.served_new))
-    array = self._get_image_from_summary()
-    image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
-    bytes_buffer = io.BytesIO()
-    image.save(bytes_buffer, 'PNG')
-    return http_util.Respond(request,
-                             bytes_buffer.getvalue(),
-                             'image/png')
+    mimetype = 'multipart/x-mixed-replace; boundary=frame'
+    return wrappers.Response(response=self._frame_generator(),
+                             status=200,
+                             mimetype=mimetype)

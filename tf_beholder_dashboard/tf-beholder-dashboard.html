@@ -96,7 +96,7 @@ limitations under the License.
         <!-- <template is="dom-if" if="[[!_dataNotFound]]"> -->
         <tf-beholder-video />
 
-        
+
       </div>
     </tf-dashboard-layout>
     <style include="dashboard-style"></style>
@@ -183,9 +183,10 @@ limitations under the License.
 
       _configChanged() {
         // We aren't finished initializing yet.
-        if (typeof this._values === 'undefined' 
-            || typeof this._mode === 'undefined') {
-          return
+        for (var property of [this._values, this._mode, this._scaling]) {
+          if (typeof property === 'undefined') {
+            return
+          }
         }
 
         const url = getRouter().pluginRoute('beholder', '/change-config');
