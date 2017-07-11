@@ -68,7 +68,7 @@ limitations under the License.
         <div class="sidebar-section">
           <div class="title">Window size: {{_windowSize}}</div>
           <paper-slider
-            id="slider"
+            id="windowSlider"
             value="{{_windowSize}}"
             type="number"
             step="1"
@@ -79,7 +79,25 @@ limitations under the License.
         </div>
 
         <div class="sidebar-section">
+          <div class="title">FPS: {{_FPS}}</div>
+          <!-- <paper-button
+            class="x-button"
+            on-tap="_togglePause">
+            [[_pauseText]]
+          </paper-button> -->
 
+
+          <paper-slider
+            id="FPSSlider"
+            value="{{_FPS}}"
+            type="number"
+            step="1"
+            min="0"
+            max="30"
+            pin="true"></paper-slider>
+        </div>
+
+        <div class="sidebar-section">
           <tf-runs-selector
             id="runs-selector"
             selected-runs="{{_selectedRuns}}"
@@ -136,6 +154,12 @@ limitations under the License.
       paper-radio-group {
         margin-top: 5px;
       }
+      paper-slider {
+        margin-left: 12px;
+        --paper-slider-knob-color: var(--tb-orange-strong);
+        --paper-slider-active-color: var(--tb-orange-strong);
+        flex-grow: 2;
+      }
     </style>
   </template>
   <script>
@@ -190,6 +214,21 @@ limitations under the License.
           observer: '_configChanged'
         },
 
+        _previousFPS: {
+          type: Number,
+          value: 30,
+        },
+
+        _FPS: {
+          type: Number,
+          value: 30,
+          observer: '_configChanged'
+        },
+
+        _pauseText: {
+          type: String,
+          value: 'pause',
+        },
       },
 
       ready() {
@@ -206,7 +245,8 @@ limitations under the License.
           this._values,
           this._mode,
           this._scaling,
-          this._windowSize
+          this._windowSize,
+          this._FPS
         ]
 
         for (var property of properties) {
@@ -220,7 +260,8 @@ limitations under the License.
           values: this._values,
           mode: this._mode,
           scaling: this._scaling,
-          window_size: this._windowSize
+          window_size: this._windowSize,
+          FPS: this._FPS
         }
 
         this._requestManager.request(url, postData).then(response => {
@@ -244,6 +285,17 @@ limitations under the License.
       _makeCategories(runToTag, selectedRuns, tagGroupRegexes) {
         return categorizeRunTagCombinations(
           runToTag, selectedRuns, tagGroupRegexes);
+      },
+
+      _togglePause() {
+        if (this._pauseText == 'pause') {
+          this.set('_previousFPS', this._FPS)
+          this.set('_FPS', 0)
+          this.set('_pauseText', 'continue')
+        } else {
+          this.set('_FPS', this._previousFPS)
+          this.set('_pauseText', 'pause')
+        }
       },
     });
   </script>

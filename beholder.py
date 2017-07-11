@@ -1,5 +1,6 @@
 from collections import deque
 import json
+import time
 
 import cv2
 import numpy as np
@@ -29,7 +30,8 @@ DEFAULT_CONFIG = {
     'values': PARAMETERS,
     'mode': VARIANCE,
     'scaling': SCALE_LAYER,
-    'window_size': 15
+    'window_size': 15,
+    'FPS': 30
 }
 
 
@@ -47,7 +49,9 @@ class Beholder():
     self.frames_over_time = deque([], DEFAULT_CONFIG['window_size'])
     self.frame_placeholder = None
     self.summary_op = None
-    self.old_config = None
+    self.old_config = dict(DEFAULT_CONFIG)
+    self.FPS = DEFAULT_CONFIG['FPS']
+    self.last_update_time = time.time()
 
 
   @staticmethod
@@ -67,9 +71,10 @@ class Beholder():
 
 
   def _get_config(self):
+
     try:
       json_string = pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
-      return json.loads(json_string)
+      config = json.loads(json_string)
     except (KeyError, ValueError):
       print('Could not read config file. Creating a config file.')
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
@@ -77,18 +82,25 @@ class Beholder():
       with open(self.PLUGIN_LOGDIR + '/config', 'w') as config_file:
         config_file.write(json.dumps(DEFAULT_CONFIG))
 
-      return DEFAULT_CONFIG
+      config = DEFAULT_CONFIG
+
+    for key, value in config.items():
+      try:
+        config[key] = int(value)
+      except ValueError:
+        pass
+
+    return config
 
 
   def _get_display_frame(self, config, arrays=None):
     values, mode, scaling = config['values'], config['mode'], config['scaling']
 
-    if config != self.old_config:
-      self.frames_over_time.clear()
-    self.old_config = config
-
     if values != CUSTOM:
       arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
+
+    if values == CUSTOM and not arrays:
+      return np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH))
 
     columns = im_util.arrays_to_columns(arrays, IMAGE_HEIGHT, IMAGE_WIDTH)
     self.frames_over_time.append(columns)
@@ -120,25 +132,45 @@ class Beholder():
       file.write(summary)
 
 
-  def _update_deque(self, window_size):
+  def _update_deque(self, config):
+
+    if config['values'] != self.old_config['values'] or\
+       config['mode'] != self.old_config['mode'] or\
+       config['scaling'] != self.old_config['scaling']:
+      self.frames_over_time.clear()
+
+    self.old_config = config
+
+    window_size = config['window_size']
+
     if window_size != self.frames_over_time.maxlen:
       self.frames_over_time = deque(self.frames_over_time, window_size)
 
 
+  def _enough_time_has_passed(self, FPS):
+    if FPS == 0:
+      return False
+    else:
+      earliest_time = self.last_update_time + (1.0 / FPS)
+      return time.time() >= earliest_time
+
+
   def update(self, arrays=None, frame=None):
     config = self._get_config()
-    self._update_deque(int(config['window_size']))
 
-    print('config', config)
+    if self._enough_time_has_passed(config['FPS']):
+      self._update_deque(config)
 
-    if frame is None:
-      frame = self._get_display_frame(config, arrays)
+      if frame is None:
+        frame = self._get_display_frame(config, arrays)
 
-    if self.summary_op is not None:
-      self._write_summary(frame)
-    else:
-      self.frame_placeholder = tf.placeholder(tf.float32,
-                                              [IMAGE_HEIGHT, IMAGE_WIDTH])
-      self.summary_op = tf.summary.tensor_summary(TAG_NAME,
-                                                  self.frame_placeholder)
-      self._write_summary(frame)
+      if self.summary_op is not None:
+        self._write_summary(frame)
+      else:
+        self.frame_placeholder = tf.placeholder(tf.float32,
+                                                [IMAGE_HEIGHT, IMAGE_WIDTH])
+        self.summary_op = tf.summary.tensor_summary(TAG_NAME,
+                                                    self.frame_placeholder)
+        self._write_summary(frame)
+
+      self.last_update_time = time.time()

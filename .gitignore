@@ -1,7 +1,11 @@
-/bazel-*
 *sublime-*
 *sublime-*
-questions.txt
+
 *events.out*
+
+questions.txt
 notes.txt
+
+/bazel-*
 tf_beholder_dashboard/data
+vgg_demo
