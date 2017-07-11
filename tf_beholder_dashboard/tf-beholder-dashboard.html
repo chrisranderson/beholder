@@ -66,14 +66,15 @@ limitations under the License.
         </div>
 
         <div class="sidebar-section">
-          <div class="title">Window size</div>
+          <div class="title">Window size: {{_windowSize}}</div>
           <paper-slider
             id="slider"
             value="{{_windowSize}}"
             type="number"
             step="1"
-            min="1"
+            min="2"
             max="20"
+            pin="true"
             ></paper-slider>
         </div>
 
@@ -185,7 +186,7 @@ limitations under the License.
 
         _windowSize: {
           type: Number,
-          value: 5,
+          value: 15,
           observer: '_configChanged'
         },
 

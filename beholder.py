@@ -29,7 +29,7 @@ DEFAULT_CONFIG = {
     'values': PARAMETERS,
     'mode': VARIANCE,
     'scaling': SCALE_LAYER,
-    'window_size': 5
+    'window_size': 15
 }
 
 
