@@ -27,7 +27,8 @@ IMAGE_WIDTH = int(IMAGE_HEIGHT * (4.0/3.0))
 DEFAULT_CONFIG = {
     'values': PARAMETERS,
     'mode': VARIANCE,
-    'scaling': SCALE_LAYER
+    'scaling': SCALE_LAYER,
+    'window_size': 5
 }
 
 
@@ -36,15 +37,13 @@ class Beholder():
   def __init__(
       self,
       session,
-      logdir,
-      variance_duration=5):
+      logdir):
 
     self.LOGDIR_ROOT = logdir
     self.PLUGIN_LOGDIR = pau.PluginDirectory(logdir, PLUGIN_NAME)
     self.SESSION = session
-    self.VARIANCE_DURATION = variance_duration
 
-    self.frames_over_time = deque([], variance_duration)
+    self.frames_over_time = deque([], DEFAULT_CONFIG['window_size'])
     self.frame_placeholder = None
     self.summary_op = None
     self.old_values = None
@@ -121,9 +120,13 @@ class Beholder():
     with open(path, 'wb') as file:
       file.write(summary)
 
+  def _update_deque(self, window_size):
+    if window_size != self.frames_over_time.maxlen:
+      self.frames_over_time = deque(self.frames_over_time, window_size)
 
   def update(self, arrays=None, frame=None):
     config = self._get_config()
+    self._update_deque(int(config['window_size']))
 
     print('config', config)
 

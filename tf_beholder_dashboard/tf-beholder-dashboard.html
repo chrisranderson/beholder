@@ -66,6 +66,18 @@ limitations under the License.
         </div>
 
         <div class="sidebar-section">
+          <div class="title">Window size</div>
+          <paper-slider
+            id="slider"
+            value="{{_windowSize}}"
+            type="number"
+            step="1"
+            min="1"
+            max="20"
+            ></paper-slider>
+        </div>
+
+        <div class="sidebar-section">
 
           <tf-runs-selector
             id="runs-selector"
@@ -171,6 +183,12 @@ limitations under the License.
           observer: '_configChanged'
         },
 
+        _windowSize: {
+          type: Number,
+          value: 5,
+          observer: '_configChanged'
+        },
+
       },
 
       ready() {
@@ -183,7 +201,14 @@ limitations under the License.
 
       _configChanged() {
         // We aren't finished initializing yet.
-        for (var property of [this._values, this._mode, this._scaling]) {
+        const properties = [
+          this._values,
+          this._mode,
+          this._scaling,
+          this._windowSize
+        ]
+
+        for (var property of properties) {
           if (typeof property === 'undefined') {
             return
           }
@@ -193,7 +218,8 @@ limitations under the License.
         const postData = {
           values: this._values,
           mode: this._mode,
-          scaling: this._scaling
+          scaling: this._scaling,
+          window_size: this._windowSize
         }
 
         this._requestManager.request(url, postData).then(response => {
