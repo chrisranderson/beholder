@@ -131,7 +131,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
 
   @wrappers.Request.application
-  def _serve_beholder_frame(self):
+  def _serve_beholder_frame(self, request):
     # print('percent new frames',
     #        self.served_new / (self.served_old + self.served_new))
     mimetype = 'multipart/x-mixed-replace; boundary=frame'
