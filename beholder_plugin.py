@@ -48,6 +48,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
     self.FPS = 30
 
+
   def get_plugin_apps(self):
     return {
         FRAME_ROUTE: self._serve_beholder_frame,
@@ -108,11 +109,8 @@ class BeholderPlugin(base_plugin.TBPlugin):
     self.FPS = int(config['FPS'])
 
     with open(self._CONFIG_PATH, 'w') as file:
-      print('server writing config', config)
       json_string = json.dumps(config)
-      print('json_string', json_string)
       file.write(json_string)
-
 
     return http_util.Respond(request,
                              {'config': config},

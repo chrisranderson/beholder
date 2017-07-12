@@ -29,7 +29,9 @@ limitations under the License.
 <dom-module id="tf-beholder-video">
   <template>
   
-    <img src='[[_imageURL]]'></img>
+    <div id="container">
+      <img id="video" src='[[_imageURL]]'></img>
+    </div>
     
     <style>
       img {
@@ -46,6 +48,8 @@ limitations under the License.
     import {RequestManager} from '../tf-backend/requestManager.js';
     import {getRouter} from '../tf-backend/router.js';
 
+    const FEED_ROUTE = getRouter().pluginRoute('beholder', '/beholder-frame')
+
     Polymer({
       is: "tf-beholder-video",
       properties: {
@@ -56,8 +60,19 @@ limitations under the License.
 
         _imageURL: {
           type: String,
-          value: getRouter().pluginRoute('beholder', '/beholder-frame')
+          value: FEED_ROUTE
         }
+      },
+
+      restart() {
+        var newImage = document.createElement('img')
+        this.$.container.appendChild(newImage)
+        newImage.src = FEED_ROUTE + '?t=' + new Date().getTime()
+        newImage.id = 'video'
+        newImage.className = 'style-scope tf-beholder-video'
+
+        this.$.container.removeChild(this.$.video)
+        this.$.video = newImage
       },
 
       ready() {

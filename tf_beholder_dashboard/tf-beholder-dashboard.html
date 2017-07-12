@@ -125,7 +125,7 @@ limitations under the License.
           </div>
         </template> -->
         <!-- <template is="dom-if" if="[[!_dataNotFound]]"> -->
-        <tf-beholder-video />
+        <tf-beholder-video id="video" />
 
 
       </div>
@@ -134,6 +134,7 @@ limitations under the License.
     <style>
       .center {
         height: 100%;
+        background: black;
       }
       .no-data-warning {
         max-width: 540px;
@@ -171,6 +172,7 @@ limitations under the License.
     import {categorizeRunTagCombinations} from '../tf-categorization-utils/categorizationUtils.js';
 
     const PLUGIN_NAME = 'beholder'
+    var cannot_connect = false
 
     Polymer({
       is: 'tf-beholder-dashboard',
@@ -187,7 +189,7 @@ limitations under the License.
 
         _requestManager: {
           type: Object,
-          value: () => new RequestManager(),
+          value: () => new RequestManager(10, 0),
         },
 
         ////
@@ -239,7 +241,8 @@ limitations under the License.
         // "Fix" for when the user script restarts, and the config is out of sync.
         // Every second should be fine, because it takes some time for the user
         // to go from their restarted script back to tensorboard. Not elegant,
-        // but an easy fix. TODO: review
+        // but an easy solution. TODO: review. Would be better to somehow detect the
+        // user script restarted, and only send the config then.
         window.setInterval(function(){
           this._configChanged()
         }.bind(this), 500)
@@ -274,9 +277,14 @@ limitations under the License.
           FPS: this._FPS
         }
 
-        this._requestManager.request(url, postData).then(response => {
-          console.log('response', response.config)
-        });
+        this._requestManager.request(url, postData).then(function(response){
+          if (cannot_connect) {
+            this.$.video.restart()
+          }
+          cannot_connect = false
+        }.bind(this), function(failure){
+          cannot_connect = true
+        }.bind(this));
       },
 
       _fetchTags() {
