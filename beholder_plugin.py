@@ -4,10 +4,11 @@ from __future__ import print_function
 
 import io
 import json
-from PIL import Image
+import time
 
 from google.protobuf import message
 import numpy as np
+from PIL import Image
 import tensorflow as tf
 from werkzeug import wrappers
 
@@ -44,6 +45,8 @@ class BeholderPlugin(base_plugin.TBPlugin):
                                        beholder.IMAGE_WIDTH))
     self.served_new = 0
     self.served_old = 0.0001
+
+    self.FPS = 30
 
   def get_plugin_apps(self):
     return {
@@ -102,6 +105,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
   @wrappers.Request.application
   def _serve_change_config(self, request):
     config = request.form
+    self.FPS = int(config['FPS'])
 
     with open(self._CONFIG_PATH, 'w') as file:
       print('server writing config', config)
@@ -117,6 +121,12 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
   def _frame_generator(self):
     while True:
+      # TODO: review
+      if self.FPS == 0:
+        continue
+      else:
+        time.sleep(1/self.FPS)
+
       array = self._get_image_from_summary()
       image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
       bytes_buffer = io.BytesIO()

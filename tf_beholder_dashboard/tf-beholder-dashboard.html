@@ -170,6 +170,8 @@ limitations under the License.
     import {getRouter} from '../tf-backend/router.js';
     import {categorizeRunTagCombinations} from '../tf-categorization-utils/categorizationUtils.js';
 
+    const PLUGIN_NAME = 'beholder'
+
     Polymer({
       is: 'tf-beholder-dashboard',
       properties: {
@@ -255,7 +257,7 @@ limitations under the License.
           }
         }
 
-        const url = getRouter().pluginRoute('beholder', '/change-config');
+        const url = getRouter().pluginRoute(PLUGIN_NAME, '/change-config');
         const postData = {
           values: this._values,
           mode: this._mode,
@@ -270,7 +272,7 @@ limitations under the License.
       },
 
       _fetchTags() {
-        const url = getRouter().pluginRoute('beholder', '/tags');
+        const url = getRouter().pluginRoute(PLUGIN_NAME, '/tags');
         return this._requestManager.request(url).then(runToTag => {
           if (_.isEqual(runToTag, this._runToTag)) {
             // No need to update anything if there are no changes.
