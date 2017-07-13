@@ -23,8 +23,8 @@ PLUGIN_NAME = 'beholder'
 TAG_NAME = 'beholder-frame'
 SUMMARY_FILENAME = 'frame.summary'
 
-IMAGE_HEIGHT = 600
-IMAGE_WIDTH = int(IMAGE_HEIGHT * (4.0/3.0))
+SECTION_HEIGHT = 100
+IMAGE_WIDTH = 600
 
 DEFAULT_CONFIG = {
     'values': PARAMETERS,
@@ -49,8 +49,10 @@ class Beholder():
     self.frames_over_time = deque([], DEFAULT_CONFIG['window_size'])
     self.frame_placeholder = None
     self.summary_op = None
+
+    self.config = dict(DEFAULT_CONFIG)
     self.old_config = dict(DEFAULT_CONFIG)
-    self.FPS = DEFAULT_CONFIG['FPS']
+
     self.last_update_time = time.time()
 
 
@@ -70,7 +72,7 @@ class Beholder():
     return grads, optimizer.apply_gradients(grads_and_vars)
 
 
-  def _get_config(self):
+  def _update_config(self):
 
     try:
       json_string = pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
@@ -90,35 +92,33 @@ class Beholder():
       except ValueError:
         pass
 
-    return config
+    self.config = config
 
 
-  def _get_display_frame(self, config, arrays=None):
-    values, mode, scaling = config['values'], config['mode'], config['scaling']
+  def _get_display_frame(self, arrays):
+    '''
+    input: config and numpy arrays that will be displayed as an image.
+    returns: a numpy array image ready to write to disk.
+    '''
+    scaling = self.config['scaling']
 
-    if values != CUSTOM:
-      arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
+    sections = im_util.arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
+    self.frames_over_time.append(sections)
 
-    if values == CUSTOM and not arrays:
-      return np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH))
+    if self.config['mode'] == CURRENT:
+      scaled_sections = im_util.scale_for_display(sections, scaling)
+    elif self.config['mode'] == VARIANCE:
+      variance_sections = []
 
-    columns = im_util.arrays_to_columns(arrays, IMAGE_HEIGHT, IMAGE_WIDTH)
-    self.frames_over_time.append(columns)
-
-    if mode == CURRENT:
-      scaled_columns = im_util.scale_for_display(columns, scaling)
-    elif mode == VARIANCE:
-      variance_columns = []
-
-      for i in range(len(columns)):
-        variance = np.var([columns[i] for columns in self.frames_over_time],
+      for i in range(len(sections)):
+        variance = np.var([sections[i] for sections in self.frames_over_time],
                           axis=0)
-        variance_columns.append(variance)
+        variance_sections.append(variance)
 
-      scaled_columns = im_util.scale_for_display(variance_columns, scaling)
+      scaled_sections = im_util.scale_for_display(variance_sections, scaling)
 
-    return cv2.resize(np.hstack(scaled_columns).astype(np.uint8),
-                      (IMAGE_WIDTH, IMAGE_HEIGHT),
+    return cv2.resize(np.vstack(scaled_sections).astype(np.uint8),
+                      (IMAGE_WIDTH, len(arrays) * SECTION_HEIGHT),
                       interpolation=cv2.INTER_NEAREST)
 
 
@@ -132,43 +132,48 @@ class Beholder():
       file.write(summary)
 
 
-  def _update_deque(self, config):
+  def _update_deque(self):
 
-    if config['values'] != self.old_config['values'] or\
-       config['mode'] != self.old_config['mode'] or\
-       config['scaling'] != self.old_config['scaling']:
+    if self.config['values'] != self.old_config['values'] or \
+       self.config['mode'] != self.old_config['mode'] or \
+       self.config['scaling'] != self.old_config['scaling']:
       self.frames_over_time.clear()
 
-    self.old_config = config
+    self.old_config = self.config
 
-    window_size = config['window_size']
+    window_size = self.config['window_size']
 
     if window_size != self.frames_over_time.maxlen:
       self.frames_over_time = deque(self.frames_over_time, window_size)
 
 
-  def _enough_time_has_passed(self, FPS):
-    if FPS == 0:
+  def _enough_time_has_passed(self):
+    if self.config['FPS'] == 0:
       return False
     else:
-      earliest_time = self.last_update_time + (1.0 / FPS)
+      earliest_time = self.last_update_time + (1.0 / self.config['FPS'])
       return time.time() >= earliest_time
 
 
   def update(self, arrays=None, frame=None):
-    config = self._get_config()
+    self._update_config()
+    values = self.config['values']
 
-    if self._enough_time_has_passed(config['FPS']):
-      self._update_deque(config)
+    if values != CUSTOM or (values == CUSTOM and not arrays):
+      arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
+
+    if self._enough_time_has_passed():
+      self._update_deque()
 
       if frame is None:
-        frame = self._get_display_frame(config, arrays)
+        frame = self._get_display_frame(arrays)
 
       if self.summary_op is not None:
         self._write_summary(frame)
       else:
         self.frame_placeholder = tf.placeholder(tf.float32,
-                                                [IMAGE_HEIGHT, IMAGE_WIDTH])
+                                                [len(arrays) * SECTION_HEIGHT,
+                                                 IMAGE_WIDTH])
         self.summary_op = tf.summary.tensor_summary(TAG_NAME,
                                                     self.frame_placeholder)
         self._write_summary(frame)

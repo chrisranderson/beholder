@@ -41,7 +41,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
                                         beholder.SUMMARY_FILENAME)
     self._CONFIG_PATH = '{}/{}'.format(plugin_logdir,
                                        'config')
-    self.most_recent_frame = np.zeros((beholder.IMAGE_HEIGHT,
+    self.most_recent_frame = np.zeros((beholder.SECTION_HEIGHT,
                                        beholder.IMAGE_WIDTH))
     self.served_new = 0
     self.served_old = 0.0001
