@@ -15,7 +15,7 @@ py_library(
 py_library(
   name = "beholder",
   srcs = ["beholder.py"],
-  data = ["resources/roboto.ttf"],
+  data = ["resources"],
   deps = [
     ":image_util",
     "//tensorboard/backend/event_processing:plugin_asset_util",

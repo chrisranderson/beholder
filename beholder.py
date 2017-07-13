@@ -1,3 +1,5 @@
+from __future__ import division, print_function
+
 from collections import deque
 import json
 import time
@@ -10,7 +12,7 @@ import tensorflow as tf
 from tensorboard.backend.event_processing import plugin_asset_util as pau
 import tensorboard.plugins.beholder.image_util as im_util
 
-font_path = "tensorboard/plugins/beholder/resources/roboto.ttf"
+font_path = "tensorboard/plugins/beholder/resources/roboto-mono.ttf"
 
 CUSTOM = 'custom'
 PARAMETERS = 'parameters'
@@ -59,6 +61,7 @@ class Beholder():
     self.old_config = dict(DEFAULT_CONFIG)
 
     self.last_update_time = time.time()
+    self.last_image_height = 0
 
 
   @staticmethod
@@ -108,15 +111,15 @@ class Beholder():
                                         sections):
       minimum = section.min()
       maximum = section.max()
-      template = '{:^30} | {:^30} min: {:^30.3e} max: {:^30.3e} range: {:^30.3e}'
+      template = '{:^30}{:^15}{:^20}{:^20}{:^20}'
       section_string = template.format(variable.name,
                                        array.shape,
-                                       minimum,
-                                       maximum,
-                                       maximum - minimum)
+                                       'min: {:.3e}'.format(minimum),
+                                       'max: {:.3e}'.format(maximum),
+                                       'range: {:.3e}'.format(maximum - minimum))
       image = Image.new('L', (3*IMAGE_WIDTH, 3*INFO_HEIGHT), (245))
       draw = ImageDraw.Draw(image)
-      draw.text((20, 60), section_string, (33), font=FONT)
+      draw.text((20, 50), section_string, (33), font=FONT)
       image = image.resize((IMAGE_WIDTH, INFO_HEIGHT), Image.ANTIALIAS)
       images.append(np.array(image).astype(np.uint8))
 
@@ -144,12 +147,12 @@ class Beholder():
       sections = variance_sections
 
     section_info_images = self._get_section_info_images(arrays, sections)
-    scaled_sections = im_util.scale_for_display(sections, scaling)
+    scaled_sections = im_util.scale_sections_for_display(sections, scaling)
     sections_with_info = []
 
-    for i in range(len(arrays)):
-      sections_with_info.append(section_info_images[i])
-      sections_with_info.append(scaled_sections[i])
+    for info, section in zip(section_info_images, scaled_sections):
+      sections_with_info.append(info)
+      sections_with_info.append(section)
 
     return cv2.resize(np.vstack(sections_with_info).astype(np.uint8),
                       (IMAGE_WIDTH,
@@ -192,26 +195,36 @@ class Beholder():
 
   def update(self, arrays=None, frame=None):
     self._update_config()
-    values = self.config['values']
-
-    if values != CUSTOM or (values == CUSTOM and not arrays):
-      arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
 
     if self._enough_time_has_passed():
-      self._update_deque()
+      values = self.config['values']
 
-      if frame is None:
+      if not isinstance(arrays, list):
+        arrays = [arrays]
+
+      if frame is None or values == PARAMETERS:
+        self._update_deque()
+
+
+        if values != CUSTOM or (values == CUSTOM and arrays is None):
+          arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
+
         frame = self._get_display_frame(arrays)
+        image_height = len(arrays) * (SECTION_HEIGHT + INFO_HEIGHT)
+        image_width = IMAGE_WIDTH
+      else:
+        image_height, image_width = frame.shape
+        frame = im_util.scale_image_for_display(frame)
 
-      if self.summary_op is not None:
+      if self.summary_op is not None and self.last_image_height == image_height:
         self._write_summary(frame)
       else:
-        image_height = len(arrays) * (SECTION_HEIGHT + INFO_HEIGHT)
-        self.frame_placeholder = tf.placeholder(tf.float32,
+        self.frame_placeholder = tf.placeholder(tf.uint8,
                                                 [image_height,
-                                                 IMAGE_WIDTH])
+                                                 image_width])
         self.summary_op = tf.summary.tensor_summary(TAG_NAME,
                                                     self.frame_placeholder)
         self._write_summary(frame)
 
       self.last_update_time = time.time()
+      self.last_image_height = image_height

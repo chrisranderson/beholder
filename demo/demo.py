@@ -27,6 +27,7 @@ from __future__ import print_function
 import argparse
 import sys
 
+import numpy as np
 import tensorflow as tf
 
 from tensorflow.examples.tutorials.mnist import input_data
@@ -181,7 +182,7 @@ def train():
     #     print('Adding run metadata for', i)
     #   else:  # Record a summary
         summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dict(True))
-        visualizer.update(arrays=gradient_arrays)
+        visualizer.update(arrays=gradient_arrays, frame=np.random.standard_normal((1000, 1000)))
         train_writer.add_summary(summary, i)
 
 

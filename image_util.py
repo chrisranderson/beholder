@@ -34,7 +34,7 @@ def arrays_to_sections(arrays, section_height, image_width):
     # Truncate whatever remaining values there are that don't fit. Hopefully,
     # it doesn't matter that the last few (< section count) aren't there.
     reshaped = np.reshape(flattened_array[:row_count * col_count],
-                               (row_count, col_count))
+                          (row_count, col_count))
     resized = cv2.resize(reshaped,
                          (image_width, section_height),
                          interpolation=cv2.INTER_NEAREST)
@@ -43,7 +43,7 @@ def arrays_to_sections(arrays, section_height, image_width):
   return sections
 
 
-def scale_for_display(sections, scaling_scope):
+def scale_sections_for_display(sections, scaling_scope):
   '''
   input: unscaled sections.
   returns: sections scaled to [0, 255]
@@ -64,3 +64,8 @@ def scale_for_display(sections, scaling_scope):
       new_sections.append(section * (255 / global_max))
 
   return new_sections
+
+def scale_image_for_display(image):
+  image -= image.min()
+  image *= 255 / image.max()
+  return image
