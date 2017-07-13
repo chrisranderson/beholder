@@ -129,7 +129,7 @@ def train():
   tf.summary.scalar('cross_entropy', cross_entropy)
 
   with tf.name_scope('train'):
-    optimizer = tf.train.AdamOptimizer(FLAGS.learning_rate)
+    optimizer = tf.train.GradientDescentOptimizer(FLAGS.learning_rate)
     gradients, train_step = Beholder.gradient_helper(optimizer, cross_entropy)
 
   with tf.name_scope('accuracy'):
@@ -180,9 +180,9 @@ def train():
     #     train_writer.add_summary(summary, i)
     #     print('Adding run metadata for', i)
     #   else:  # Record a summary
-    summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dict(True))
-    visualizer.update(arrays=gradient_arrays)
-    train_writer.add_summary(summary, i)
+        summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dict(True))
+        visualizer.update(arrays=gradient_arrays)
+        train_writer.add_summary(summary, i)
 
 
 
@@ -204,7 +204,7 @@ if __name__ == '__main__':
                       help='If true, uses fake data for unit testing.')
   parser.add_argument('--max_steps', type=int, default=1000000,
                       help='Number of steps to run trainer.')
-  parser.add_argument('--learning_rate', type=float, default=0.0001,
+  parser.add_argument('--learning_rate', type=float, default=0.001,
                       help='Initial learning rate')
   parser.add_argument('--dropout', type=float, default=0.9,
                       help='Keep probability for training dropout.')

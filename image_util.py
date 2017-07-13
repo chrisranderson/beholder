@@ -25,38 +25,42 @@ def arrays_to_sections(arrays, section_height, image_width):
     cell_area = section_area / cell_count
 
     cell_side_length = floor(sqrt(cell_area))
-    row_count = int(floor(section_height / cell_side_length))
+    row_count = max(1, int(floor(section_height / cell_side_length)))
     col_count = int(floor(cell_count / row_count))
+
+    # Reshape the truncated array so that it has the same aspect ratio as the
+    # section.
 
     # Truncate whatever remaining values there are that don't fit. Hopefully,
     # it doesn't matter that the last few (< section count) aren't there.
-    sections.append(np.reshape(flattened_array[:row_count * col_count],
-                               (row_count, col_count)))
+    reshaped = np.reshape(flattened_array[:row_count * col_count],
+                               (row_count, col_count))
+    resized = cv2.resize(reshaped,
+                         (image_width, section_height),
+                         interpolation=cv2.INTER_NEAREST)
+    sections.append(resized)
 
-  return [cv2.resize(section,
-                     (image_width, section_height),
-                     interpolation=cv2.INTER_NEAREST)
-          for section in sections]
+  return sections
 
 
-def scale_for_display(columns, scaling_scope):
+def scale_for_display(sections, scaling_scope):
   '''
-  input: unscaled columns.
-  returns: columns scaled to [0, 255]
+  input: unscaled sections.
+  returns: sections scaled to [0, 255]
   '''
 
-  new_columns = []
+  new_sections = []
 
   if scaling_scope == 'layer':
-    for column in columns:
-      column -= column.min()
-      new_columns.append(column * (255 / column.max()))
+    for section in sections:
+      section -= section.min()
+      new_sections.append(section * (255 / section.max()))
 
   elif scaling_scope == 'network':
-    global_min, global_max = global_extrema(columns)
+    global_min, global_max = global_extrema(sections)
 
-    for column in columns:
-      column -= global_min
-      new_columns.append(column * (255 / global_max))
+    for section in sections:
+      section -= global_min
+      new_sections.append(section * (255 / global_max))
 
-  return new_columns
+  return new_sections

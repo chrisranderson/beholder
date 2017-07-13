@@ -108,9 +108,12 @@ class BeholderPlugin(base_plugin.TBPlugin):
     config = request.form
     self.FPS = int(config['FPS'])
 
-    with open(self._CONFIG_PATH, 'w') as file:
-      json_string = json.dumps(config)
-      file.write(json_string)
+    try:
+      with open(self._CONFIG_PATH, 'w') as file:
+        json_string = json.dumps(config)
+        file.write(json_string)
+    except IOError:
+      print('Could not write config file. Does the logdir exist?')
 
     return http_util.Respond(request,
                              {'config': config},

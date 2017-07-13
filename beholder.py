@@ -4,11 +4,13 @@ import time
 
 import cv2
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 import tensorflow as tf
 
 from tensorboard.backend.event_processing import plugin_asset_util as pau
 import tensorboard.plugins.beholder.image_util as im_util
 
+font_path = "tensorboard/plugins/beholder/resources/roboto.ttf"
 
 CUSTOM = 'custom'
 PARAMETERS = 'parameters'
@@ -23,8 +25,11 @@ PLUGIN_NAME = 'beholder'
 TAG_NAME = 'beholder-frame'
 SUMMARY_FILENAME = 'frame.summary'
 
-SECTION_HEIGHT = 100
-IMAGE_WIDTH = 600
+SECTION_HEIGHT = 80
+IMAGE_WIDTH = 1200
+
+INFO_HEIGHT = 40
+FONT = ImageFont.truetype(font_path, int(INFO_HEIGHT*1.2))
 
 DEFAULT_CONFIG = {
     'values': PARAMETERS,
@@ -95,6 +100,29 @@ class Beholder():
     self.config = config
 
 
+  def _get_section_info_images(self, arrays, sections):
+    images = []
+
+    for variable, array, section in zip(tf.trainable_variables(),
+                                        arrays,
+                                        sections):
+      minimum = section.min()
+      maximum = section.max()
+      template = '{:^30} | {:^30} min: {:^30.3e} max: {:^30.3e} range: {:^30.3e}'
+      section_string = template.format(variable.name,
+                                       array.shape,
+                                       minimum,
+                                       maximum,
+                                       maximum - minimum)
+      image = Image.new('L', (3*IMAGE_WIDTH, 3*INFO_HEIGHT), (245))
+      draw = ImageDraw.Draw(image)
+      draw.text((20, 60), section_string, (33), font=FONT)
+      image = image.resize((IMAGE_WIDTH, INFO_HEIGHT), Image.ANTIALIAS)
+      images.append(np.array(image).astype(np.uint8))
+
+    return images
+
+
   def _get_display_frame(self, arrays):
     '''
     input: config and numpy arrays that will be displayed as an image.
@@ -105,9 +133,7 @@ class Beholder():
     sections = im_util.arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
     self.frames_over_time.append(sections)
 
-    if self.config['mode'] == CURRENT:
-      scaled_sections = im_util.scale_for_display(sections, scaling)
-    elif self.config['mode'] == VARIANCE:
+    if self.config['mode'] == VARIANCE:
       variance_sections = []
 
       for i in range(len(sections)):
@@ -115,10 +141,19 @@ class Beholder():
                           axis=0)
         variance_sections.append(variance)
 
-      scaled_sections = im_util.scale_for_display(variance_sections, scaling)
+      sections = variance_sections
 
-    return cv2.resize(np.vstack(scaled_sections).astype(np.uint8),
-                      (IMAGE_WIDTH, len(arrays) * SECTION_HEIGHT),
+    section_info_images = self._get_section_info_images(arrays, sections)
+    scaled_sections = im_util.scale_for_display(sections, scaling)
+    sections_with_info = []
+
+    for i in range(len(arrays)):
+      sections_with_info.append(section_info_images[i])
+      sections_with_info.append(scaled_sections[i])
+
+    return cv2.resize(np.vstack(sections_with_info).astype(np.uint8),
+                      (IMAGE_WIDTH,
+                       len(arrays) * (SECTION_HEIGHT + INFO_HEIGHT)),
                       interpolation=cv2.INTER_NEAREST)
 
 
@@ -171,8 +206,9 @@ class Beholder():
       if self.summary_op is not None:
         self._write_summary(frame)
       else:
+        image_height = len(arrays) * (SECTION_HEIGHT + INFO_HEIGHT)
         self.frame_placeholder = tf.placeholder(tf.float32,
-                                                [len(arrays) * SECTION_HEIGHT,
+                                                [image_height,
                                                  IMAGE_WIDTH])
         self.summary_op = tf.summary.tensor_summary(TAG_NAME,
                                                     self.frame_placeholder)
