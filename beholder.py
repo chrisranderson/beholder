@@ -36,7 +36,7 @@ DEFAULT_CONFIG = {
     'mode': VARIANCE,
     'scaling': SCALE_LAYER,
     'window_size': 15,
-    'FPS': 30
+    'FPS': 10
 }
 
 

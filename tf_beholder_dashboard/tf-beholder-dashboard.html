@@ -18,6 +18,7 @@ limitations under the License.
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-radio-group/paper-radio-group.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../tf-backend/tf-backend.html">
 <link rel="import" href="../tf-categorization-utils/tf-categorization-utils.html">
@@ -41,7 +42,8 @@ limitations under the License.
             id="valuesSelector"
             selected="{{_values}}">
             <paper-radio-button name="parameters">parameters</paper-radio-button>
-            <paper-radio-button name="custom">custom</paper-radio-button>
+            <paper-radio-button id="option-custom" name="custom">custom</paper-radio-button>
+            <paper-tooltip for="option-custom" position="right">Loads arrays passed to the update function: beholder.update(arrays=[numpy arrays])</paper-tooltip>
           </paper-radio-group>
         </div>
 
@@ -50,8 +52,8 @@ limitations under the License.
           <paper-radio-group
             id="modeSelector"
             selected="{{_mode}}">
-            <paper-radio-button name="current">current</paper-radio-button>
-            <paper-radio-button name="variance">variance</paper-radio-button>
+            <paper-radio-button name="current">current values</paper-radio-button>
+            <paper-radio-button name="variance">variance over train steps</paper-radio-button>
           </paper-radio-group>
         </div>
 
@@ -60,13 +62,15 @@ limitations under the License.
           <paper-radio-group
             id="scalingSelector"
             selected="{{_scaling}}">
-            <paper-radio-button name="layer">per-layer</paper-radio-button>
-            <paper-radio-button name="network">entire network</paper-radio-button>
+            <paper-radio-button id="option-layer" name="layer">per-layer</paper-radio-button>
+            <paper-tooltip for="option-layer" position="right">Black == small relative to that layer, white == large relative to that layer</paper-tooltip>
+            <paper-radio-button id="option-network" name="network">entire network</paper-radio-button>
+            <paper-tooltip for="option-network" position="right">Black == small relative to the entire network, white == large relative to the entire network</paper-tooltip>
           </paper-radio-group>
         </div>
 
         <div class="sidebar-section">
-          <div class="title">Window size: {{_windowSize}}</div>
+          <div class="title">Variance timesteps: {{_windowSize}}</div>
           <paper-slider
             id="windowSlider"
             value="{{_windowSize}}"
@@ -79,7 +83,7 @@ limitations under the License.
         </div>
 
         <div class="sidebar-section">
-          <div class="title">FPS: {{_FPS}}</div>
+          <div class="title">Updates per second: {{_FPS}}</div>
           <!-- <paper-button
             class="x-button"
             on-tap="_togglePause">
@@ -224,7 +228,7 @@ limitations under the License.
 
         _FPS: {
           type: Number,
-          value: 30,
+          value: 10,
           observer: '_configChanged'
         },
 

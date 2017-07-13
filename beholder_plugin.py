@@ -46,7 +46,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
     self.served_new = 0
     self.served_old = 0.0001
 
-    self.FPS = 30
+    self.FPS = 10
 
 
   def get_plugin_apps(self):
