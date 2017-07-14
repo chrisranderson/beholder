@@ -2,13 +2,17 @@ from __future__ import division, print_function
 
 from math import floor, sqrt
 
-import cv2
-from PIL import Image, ImageDraw, ImageFont
-
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
 font_path = "tensorboard/plugins/beholder/resources/roboto-mono.ttf"
 FONT = ImageFont.truetype(font_path, 48)
+
+
+def resize(nparray, height, width):
+  image = Image.fromarray(nparray)
+  return np.array(image.resize((width, height), Image.NEAREST))
+
 
 def global_extrema(arrays):
   return min([x.min() for x in arrays]), max([x.max() for x in arrays])
@@ -39,9 +43,7 @@ def arrays_to_sections(arrays, section_height, image_width):
     # it doesn't matter that the last few (< section count) aren't there.
     reshaped = np.reshape(flattened_array[:row_count * col_count],
                           (row_count, col_count))
-    resized = cv2.resize(reshaped,
-                         (image_width, section_height),
-                         interpolation=cv2.INTER_NEAREST)
+    resized = resize(reshaped, section_height, image_width)
     sections.append(resized)
 
   return sections
@@ -80,7 +82,7 @@ def text_image(height, width, text):
 def scale_image_for_display(image, minimum=None, maximum=None):
   minimum = image.min() if minimum is None else minimum
   image -= minimum
-  
+
   maximum = image.max() if maximum is None else maximum
   image *= 255 / maximum
   return image

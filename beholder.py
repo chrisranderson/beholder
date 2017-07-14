@@ -4,7 +4,6 @@ from collections import deque
 import json
 import time
 
-import cv2
 import numpy as np
 import tensorflow as tf
 
@@ -168,10 +167,9 @@ class Beholder():
       image_stack.append(info)
       image_stack.append(section)
 
-    return cv2.resize(np.vstack(image_stack).astype(np.uint8),
-                      (IMAGE_WIDTH,
-                       len(arrays) * (SECTION_HEIGHT + INFO_HEIGHT)),
-                      interpolation=cv2.INTER_NEAREST)
+    return im_util.resize(np.vstack(image_stack).astype(np.uint8),
+                          len(arrays) * (SECTION_HEIGHT + INFO_HEIGHT),
+                          IMAGE_WIDTH)
 
 
   def _write_summary(self, frame):
