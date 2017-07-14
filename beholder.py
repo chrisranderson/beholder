@@ -6,22 +6,10 @@ import time
 
 import cv2
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
 import tensorflow as tf
 
 from tensorboard.backend.event_processing import plugin_asset_util as pau
 import tensorboard.plugins.beholder.image_util as im_util
-
-font_path = "tensorboard/plugins/beholder/resources/roboto-mono.ttf"
-
-CUSTOM = 'custom'
-PARAMETERS = 'parameters'
-
-CURRENT = 'current'
-VARIANCE = 'variance'
-
-SCALE_LAYER = 'layer'
-SCALE_NETWORK = 'network'
 
 PLUGIN_NAME = 'beholder'
 TAG_NAME = 'beholder-frame'
@@ -31,12 +19,11 @@ SECTION_HEIGHT = 80
 IMAGE_WIDTH = 1200
 
 INFO_HEIGHT = 40
-FONT = ImageFont.truetype(font_path, int(INFO_HEIGHT*1.2))
 
 DEFAULT_CONFIG = {
-    'values': PARAMETERS,
-    'mode': VARIANCE,
-    'scaling': SCALE_LAYER,
+    'values': 'trainable_variables',
+    'mode': 'variance',
+    'scaling': 'layer',
     'window_size': 15,
     'FPS': 10
 }
@@ -48,12 +35,16 @@ class Beholder():
       self,
       session,
       logdir):
+    '''
+      sections_over_time: deque<list<nparray>>. A list of sections is appended
+        at every update.
+    '''
 
     self.LOGDIR_ROOT = logdir
     self.PLUGIN_LOGDIR = pau.PluginDirectory(logdir, PLUGIN_NAME)
     self.SESSION = session
 
-    self.frames_over_time = deque([], DEFAULT_CONFIG['window_size'])
+    self.sections_over_time = deque([], DEFAULT_CONFIG['window_size'])
     self.frame_placeholder = None
     self.summary_op = None
 
@@ -66,10 +57,13 @@ class Beholder():
 
   @staticmethod
   def gradient_helper(optimizer, loss, var_list=None):
-    '''
-    A helper to get the gradients out at each step.
+    '''A helper to get the gradients out at each step.
 
-    Returns: the tensors and the train_step op
+    Args:
+      optimizer: the optimizer op.
+      loss: the op that computes your loss value.
+
+    Returns: the tensors and the train_step op.
     '''
     if var_list is None:
       var_list = tf.trainable_variables()
@@ -81,12 +75,12 @@ class Beholder():
 
 
   def _update_config(self):
+    '''Reads the config file from disk or creates a new one.'''
 
     try:
       json_string = pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
       config = json.loads(json_string)
     except (KeyError, ValueError):
-      print('Could not read config file. Creating a config file.')
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
 
       with open(self.PLUGIN_LOGDIR + '/config', 'w') as config_file:
@@ -104,63 +98,85 @@ class Beholder():
 
 
   def _get_section_info_images(self, arrays, sections):
+    '''Renders images that go above each section.
+
+    Args:
+      arrays: a list of np arrays.
+      sections: unscaled nparrays
+
+    Returns:
+      A list of np arrays.
+    '''
     images = []
 
-    for variable, array, section in zip(tf.trainable_variables(),
-                                        arrays,
-                                        sections):
+    if self.config['values'] == 'trainable_variables':
+      names = [x.name for x in tf.trainable_variables()]
+    else:
+      names = range(len(arrays))
+
+    for name, array, section in zip(names, arrays, sections):
       minimum = section.min()
       maximum = section.max()
+      shape = array.shape
+      min_text = 'min: {:.3e}'.format(minimum)
+      max_text = 'max: {:.3e}'.format(maximum)
+      range_text = 'range: {:.3e}'.format(maximum - minimum)
+
       template = '{:^30}{:^15}{:^20}{:^20}{:^20}'
-      section_string = template.format(variable.name,
-                                       array.shape,
-                                       'min: {:.3e}'.format(minimum),
-                                       'max: {:.3e}'.format(maximum),
-                                       'range: {:.3e}'.format(maximum - minimum))
-      image = Image.new('L', (3*IMAGE_WIDTH, 3*INFO_HEIGHT), (245))
-      draw = ImageDraw.Draw(image)
-      draw.text((20, 50), section_string, (33), font=FONT)
-      image = image.resize((IMAGE_WIDTH, INFO_HEIGHT), Image.ANTIALIAS)
-      images.append(np.array(image).astype(np.uint8))
+      final_text = template.format(name, shape, min_text, max_text, range_text)
+
+      images.append(im_util.text_image(INFO_HEIGHT, IMAGE_WIDTH, final_text))
 
     return images
 
 
-  def _get_display_frame(self, arrays):
-    '''
-    input: config and numpy arrays that will be displayed as an image.
-    returns: a numpy array image ready to write to disk.
-    '''
-    scaling = self.config['scaling']
+  def _sections_to_variance_sections(self):
+    '''Computes the variance of corresponding sections over time.
 
+    Returns:
+      a list of np arrays.
+    '''
+    variance_sections = []
+
+    for i in range(len(self.sections_over_time[0])):
+      time_sections = [sections[i] for sections in self.sections_over_time]
+      variance = np.var(time_sections, axis=0)
+      variance_sections.append(variance)
+
+    return variance_sections
+
+
+  def _arrays_to_image(self, arrays):
+    '''
+    Args:
+      arrays: a list of np arrays to be visualized.
+
+    Returns:
+      a numpy array image ready to be turned into a summary.
+    '''
     sections = im_util.arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
-    self.frames_over_time.append(sections)
+    self.sections_over_time.append(sections)
 
-    if self.config['mode'] == VARIANCE:
-      variance_sections = []
-
-      for i in range(len(sections)):
-        variance = np.var([sections[i] for sections in self.frames_over_time],
-                          axis=0)
-        variance_sections.append(variance)
-
-      sections = variance_sections
+    if self.config['mode'] == 'variance':
+      sections = self._sections_to_variance_sections()
 
     section_info_images = self._get_section_info_images(arrays, sections)
-    scaled_sections = im_util.scale_sections_for_display(sections, scaling)
-    sections_with_info = []
+    scaled_sections = im_util.scale_sections(sections, self.config['scaling'])
+    image_stack = []
 
     for info, section in zip(section_info_images, scaled_sections):
-      sections_with_info.append(info)
-      sections_with_info.append(section)
+      image_stack.append(info)
+      image_stack.append(section)
 
-    return cv2.resize(np.vstack(sections_with_info).astype(np.uint8),
+    return cv2.resize(np.vstack(image_stack).astype(np.uint8),
                       (IMAGE_WIDTH,
                        len(arrays) * (SECTION_HEIGHT + INFO_HEIGHT)),
                       interpolation=cv2.INTER_NEAREST)
 
 
   def _write_summary(self, frame):
+    '''Writes the frame to disk as a tensor summary.'''
+
     summary = self.SESSION.run(self.summary_op, feed_dict={
         self.frame_placeholder: frame
     })
@@ -170,61 +186,69 @@ class Beholder():
       file.write(summary)
 
 
-  def _update_deque(self):
-
-    if self.config['values'] != self.old_config['values'] or \
-       self.config['mode'] != self.old_config['mode'] or \
-       self.config['scaling'] != self.old_config['scaling']:
-      self.frames_over_time.clear()
+  def _maybe_clear_deque(self):
+    '''Clears the deque if the config has changed.'''
+    for config_item in ['values', 'mode', 'scaling', 'FPS']:
+      if self.config[config_item] != self.old_config[config_item]:
+        self.sections_over_time.clear()
+        break
 
     self.old_config = self.config
 
     window_size = self.config['window_size']
+    if window_size != self.sections_over_time.maxlen:
+      self.sections_over_time = deque(self.sections_over_time, window_size)
 
-    if window_size != self.frames_over_time.maxlen:
-      self.frames_over_time = deque(self.frames_over_time, window_size)
+  def _get_final_image(self, arrays=None, frame=None):
 
 
-  def _enough_time_has_passed(self):
-    if self.config['FPS'] == 0:
-      return False
-    else:
-      earliest_time = self.last_update_time + (1.0 / self.config['FPS'])
-      return time.time() >= earliest_time
+    def enough_time_has_passed():
+      '''For limiting how often frames are computed.'''
+      if self.config['FPS'] == 0:
+        return False
+      else:
+        earliest_time = self.last_update_time + (1.0 / self.config['FPS'])
+        return time.time() >= earliest_time
 
+
+    final_image = None
+
+    if self.config['values'] == 'frames':
+      final_image = im_util.scale_image_for_display(frame)
+
+    elif enough_time_has_passed():
+      self._maybe_clear_deque()
+
+      if self.config['values'] == 'trainable_variables':
+        arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
+        final_image = self._arrays_to_image(arrays)
+
+      if self.config['values'] == 'arrays':
+        arrays = arrays if isinstance(arrays, list) else [arrays]
+        final_image = self._arrays_to_image(arrays)
+
+    return final_image
 
   def update(self, arrays=None, frame=None):
+    '''Creates a frame and writes it to disk.
+
+    Args:
+      arrays: a list of np arrays. Use the "custom" option in the client.
+      frame: a 2D np array. This way the plugin can be used for video of any
+             kind, not just the visualization that comes with the plugin.
+
+    '''
     self._update_config()
+    final_image = self._get_final_image(arrays, frame)
 
-    if self._enough_time_has_passed():
-      values = self.config['values']
+    if final_image is not None:
+      image_height, image_width = final_image.shape
 
-      if not isinstance(arrays, list):
-        arrays = [arrays]
-
-      if frame is None or values == PARAMETERS:
-        self._update_deque()
-
-
-        if values != CUSTOM or (values == CUSTOM and arrays is None):
-          arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
-
-        frame = self._get_display_frame(arrays)
-        image_height = len(arrays) * (SECTION_HEIGHT + INFO_HEIGHT)
-        image_width = IMAGE_WIDTH
-      else:
-        image_height, image_width = frame.shape
-        frame = im_util.scale_image_for_display(frame)
-
-      if self.summary_op is not None and self.last_image_height == image_height:
-        self._write_summary(frame)
-      else:
-        self.frame_placeholder = tf.placeholder(tf.uint8,
-                                                [image_height,
-                                                 image_width])
+      if self.summary_op is None or self.last_image_height != image_height:
+        self.frame_placeholder = tf.placeholder(tf.uint8, [image_height,
+                                                           image_width])
         self.summary_op = tf.summary.tensor_summary(TAG_NAME,
                                                     self.frame_placeholder)
-        self._write_summary(frame)
-
+      self._write_summary(final_image)
       self.last_update_time = time.time()
       self.last_image_height = image_height

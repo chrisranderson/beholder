@@ -3,8 +3,12 @@ from __future__ import division, print_function
 from math import floor, sqrt
 
 import cv2
+from PIL import Image, ImageDraw, ImageFont
+
 import numpy as np
 
+font_path = "tensorboard/plugins/beholder/resources/roboto-mono.ttf"
+FONT = ImageFont.truetype(font_path, 48)
 
 def global_extrema(arrays):
   return min([x.min() for x in arrays]), max([x.max() for x in arrays])
@@ -43,7 +47,7 @@ def arrays_to_sections(arrays, section_height, image_width):
   return sections
 
 
-def scale_sections_for_display(sections, scaling_scope):
+def scale_sections(sections, scaling_scope):
   '''
   input: unscaled sections.
   returns: sections scaled to [0, 255]
@@ -53,19 +57,30 @@ def scale_sections_for_display(sections, scaling_scope):
 
   if scaling_scope == 'layer':
     for section in sections:
-      section -= section.min()
-      new_sections.append(section * (255 / section.max()))
+      new_sections.append(scale_image_for_display(section))
 
   elif scaling_scope == 'network':
     global_min, global_max = global_extrema(sections)
 
     for section in sections:
-      section -= global_min
-      new_sections.append(section * (255 / global_max))
-
+      new_sections.append(scale_image_for_display(section,
+                                                  global_min,
+                                                  global_max))
   return new_sections
 
-def scale_image_for_display(image):
-  image -= image.min()
-  image *= 255 / image.max()
+
+def text_image(height, width, text):
+  image = Image.new('L', (3*width, 3*height), (245))
+  draw = ImageDraw.Draw(image)
+  draw.text((20, 50), text, (33), font=FONT)
+  image = image.resize((width, height), Image.ANTIALIAS)
+  return np.array(image).astype(np.uint8)
+
+
+def scale_image_for_display(image, minimum=None, maximum=None):
+  minimum = image.min() if minimum is None else minimum
+  image -= minimum
+  
+  maximum = image.max() if maximum is None else maximum
+  image *= 255 / maximum
   return image
