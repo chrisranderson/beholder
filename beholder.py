@@ -185,8 +185,8 @@ class Beholder():
 
 
   def _maybe_clear_deque(self):
-    '''Clears the deque if the config has changed.'''
-    for config_item in ['values', 'mode', 'scaling', 'FPS']:
+    '''Clears the deque if certain parts of the config have changed.'''
+    for config_item in ['values', 'mode', 'scaling']:
       if self.config[config_item] != self.old_config[config_item]:
         self.sections_over_time.clear()
         break
@@ -212,9 +212,17 @@ class Beholder():
     final_image = None
 
     if self.config['values'] == 'frames':
-      final_image = im_util.scale_image_for_display(frame)
+      if frame is None:
+        message = "A frame wasn't passed into the update function."
+        final_image = im_util.text_image(INFO_HEIGHT, IMAGE_WIDTH, message)
+      else:
+        frame = frame() if callable(frame) else frame
+        final_image = im_util.scale_image_for_display(frame)
 
     elif enough_time_has_passed():
+      # The visualization is a lot smoother if last_update_time is updated here
+      # rather than after everything is done.
+      self.last_update_time = time.time()
       self._maybe_clear_deque()
 
       if self.config['values'] == 'trainable_variables':
@@ -222,11 +230,17 @@ class Beholder():
         final_image = self._arrays_to_image(arrays)
 
       if self.config['values'] == 'arrays':
-        arrays = arrays if isinstance(arrays, list) else [arrays]
-        final_image = self._arrays_to_image(arrays)
+        if arrays is None:
+          message = "Arrays weren't passed into the update function."
+          final_image = im_util.text_image(INFO_HEIGHT, IMAGE_WIDTH, message)
+        else:
+          arrays = arrays if isinstance(arrays, list) else [arrays]
+          final_image = self._arrays_to_image(arrays)
 
     return final_image
 
+  # TODO: blanket try and except for production? I don't someone's script to die
+  #       after weeks of running because of a visualization.
   def update(self, arrays=None, frame=None):
     '''Creates a frame and writes it to disk.
 
@@ -235,11 +249,15 @@ class Beholder():
       frame: a 2D np array. This way the plugin can be used for video of any
              kind, not just the visualization that comes with the plugin.
 
+             frame can also be a function, which only is evaluated when the
+             "frame" option is selected by the client.
+
     '''
     self._update_config()
     final_image = self._get_final_image(arrays, frame)
 
     if final_image is not None:
+
       image_height, image_width = final_image.shape
 
       if self.summary_op is None or self.last_image_height != image_height:
@@ -248,5 +266,4 @@ class Beholder():
         self.summary_op = tf.summary.tensor_summary(TAG_NAME,
                                                     self.frame_placeholder)
       self._write_summary(final_image)
-      self.last_update_time = time.time()
       self.last_image_height = image_height

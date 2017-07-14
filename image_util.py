@@ -18,6 +18,86 @@ def global_extrema(arrays):
   return min([x.min() for x in arrays]), max([x.max() for x in arrays])
 
 
+def conv_section(array, section_height, image_width):
+  '''Reshape the conv layer so that the channels of the kernels stay together.
+
+  Args:
+    array: a numpy array of shape [a, b, c, d]
+
+  Returns:
+    a "section" - a numpy array of shape [section_height, image_width]. In this
+    case, conv kernels maintain at least a little bit of spatial similarity.
+  '''
+  block_height, block_width, in_channels, out_channels = array.shape
+  max_blocks = int((section_height * image_width) / (block_height*block_width))
+
+  '''Reshape the 4d array into a 2d array where kernel variables retain spatial
+  consistency. Individual kernel channels are now stacked horizontally. E.g.
+
+  x = np.array([
+    [[[1, 2, 3, 4], [5, 6, 7, 8]],
+     [[1, 2, 3, 4], [5, 6, 7, 8]],
+     [[1, 2, 3, 4], [5, 6, 7, 8]]],
+
+    [[[1, 2, 3, 4], [5, 6, 7, 8]],
+     [[1, 2, 3, 4], [5, 6, 7, 8]],
+     [[1, 2, 3, 4], [5, 6, 7, 8]]],
+  ])
+
+  >>> x[:, :, 0, 0]
+  array([[1, 1, 1],
+         [1, 1, 1]])
+
+  >>> x[:, :, 0, 1]
+  array([[2, 2, 2],
+         [2, 2, 2]])
+
+  >>> x[:, :, 1, 0]
+  array([[5, 5, 5],
+         [5, 5, 5]])
+
+  >>>x.reshape(2, 3*2*4, order='F')
+  [[1, 1, 1, 5, 5, 5, 2, 2, 2, 6, 6, 6, 3, 3, 3, 7, 7, 7, 4, 4, 4, 8, 8, 8],
+   [1, 1, 1, 5, 5, 5, 2, 2, 2, 6, 6, 6, 3, 3, 3, 7, 7, 7, 4, 4, 4, 8, 8, 8]]
+  '''
+  blocks_2d = array.reshape(block_height,
+                            block_width * in_channels * out_channels,
+                            order='F')[:, :max_blocks * block_width]
+
+  block_count = in_channels * out_channels
+  ratio = section_height / image_width
+
+  # These come from solving these equations:
+  #   block_height * row_count / block_width * col_count == ratio
+  #   row_count * col_count == block_count
+  row_count = int(sqrt(ratio * block_width * block_count / block_height)) + 1
+  col_count = int(block_count / row_count)
+  row_width = col_count * block_width
+
+  # TODO: is there a better way to reshape these?
+  # Take chunks out of the 2d matrix of filters and stack them vertically
+  rows = []
+  for row_number in range(row_count):
+    slice_start = row_number * row_width
+    slice_end = slice_start + (row_width)
+    row = blocks_2d[:, slice_start:slice_end]
+
+    if row.shape[1] == 0:
+      continue
+
+    if row.shape[1] != row_width:
+      row = np.pad(row, [[0, 0], [0, row_width - row.shape[1]]], 'minimum')
+
+    rows.append(row)
+
+  if len(rows) == 1:
+    section = rows[0]
+  else:
+    section = np.vstack(rows)
+
+  return resize(section, section_height, image_width)
+
+
 def arrays_to_sections(arrays, section_height, image_width):
   '''
   input: unprocessed numpy arrays.
@@ -28,23 +108,26 @@ def arrays_to_sections(arrays, section_height, image_width):
   section_area = section_height * image_width
 
   for array in arrays:
-    flattened_array = np.ravel(array)[:section_area]
-    cell_count = np.prod(flattened_array.shape)
-    cell_area = section_area / cell_count
+    if len(array.shape) == 4:
+      sections.append(conv_section(array, section_height, image_width))
+    else:
+      flattened_array = np.ravel(array)[:section_area]
+      cell_count = np.prod(flattened_array.shape)
+      cell_area = section_area / cell_count
 
-    cell_side_length = floor(sqrt(cell_area))
-    row_count = max(1, int(floor(section_height / cell_side_length)))
-    col_count = int(floor(cell_count / row_count))
+      cell_side_length = floor(sqrt(cell_area))
+      row_count = max(1, int(section_height / cell_side_length))
+      col_count = int(cell_count / row_count)
 
-    # Reshape the truncated array so that it has the same aspect ratio as the
-    # section.
+      # Reshape the truncated array so that it has the same aspect ratio as the
+      # section.
 
-    # Truncate whatever remaining values there are that don't fit. Hopefully,
-    # it doesn't matter that the last few (< section count) aren't there.
-    reshaped = np.reshape(flattened_array[:row_count * col_count],
-                          (row_count, col_count))
-    resized = resize(reshaped, section_height, image_width)
-    sections.append(resized)
+      # Truncate whatever remaining values there are that don't fit. Hopefully,
+      # it doesn't matter that the last few (< section count) aren't there.
+      reshaped = np.reshape(flattened_array[:row_count * col_count],
+                            (row_count, col_count))
+      resized = resize(reshaped, section_height, image_width)
+      sections.append(resized)
 
   return sections
 

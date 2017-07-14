@@ -40,15 +40,12 @@ FLAGS = None
 LOG_DIRECTORY = '/tmp/tf-beholder'
 
 def train():
-  # Import data
   mnist = input_data.read_data_sets(FLAGS.data_dir,
                                     one_hot=True,
                                     fake_data=FLAGS.fake_data)
 
   sess = tf.InteractiveSession()
-  # Create a multilayer model.
 
-  # Input placeholders
   with tf.name_scope('input'):
     x = tf.placeholder(tf.float32, [None, 784], name='x-input')
     y_ = tf.placeholder(tf.float32, [None, 10], name='y-input')
@@ -57,7 +54,6 @@ def train():
     image_shaped_input = tf.reshape(x, [-1, 28, 28, 1])
     tf.summary.image('input', image_shaped_input, 10)
 
-  # We can't initialize these variables to 0 - the network will get stuck.
   def weight_variable(shape):
     """Create a weight variable with appropriate initialization."""
     initial = tf.truncated_normal(shape, stddev=0.1)
@@ -103,34 +99,34 @@ def train():
       tf.summary.histogram('activations', activations)
       return activations
 
-  hidden1 = nn_layer(x, 784, 500, 'layer1')
+  kernel = tf.Variable(tf.truncated_normal([3, 3, 1, 2], dtype=tf.float32,
+                                                     stddev=1e-1), name='conv-weights')
+  conv = tf.nn.conv2d(image_shaped_input, kernel, [1, 1, 1, 1], padding='SAME')
+  biases = tf.Variable(tf.constant(0.0, shape=[kernel.get_shape().as_list()[-1]], dtype=tf.float32),
+                       trainable=True, name='biases')
+  out = tf.nn.bias_add(conv, biases)
+  conv2_1 = tf.nn.relu(out, name='relu')
+
+  flattened = tf.contrib.layers.flatten(conv2_1)
+
+
+  hidden1 = nn_layer(flattened, flattened.get_shape().as_list()[1], 100, 'layer1')
 
   with tf.name_scope('dropout'):
     keep_prob = tf.placeholder(tf.float32)
     tf.summary.scalar('dropout_keep_probability', keep_prob)
     dropped = tf.nn.dropout(hidden1, keep_prob)
 
-  # Do not apply softmax activation yet, see below.
-  y = nn_layer(dropped, 500, 10, 'layer2', act=tf.identity)
+  y = nn_layer(dropped, 100, 10, 'layer2', act=tf.identity)
 
   with tf.name_scope('cross_entropy'):
-    # The raw formulation of cross-entropy,
-    #
-    # tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(tf.softmax(y)),
-    #                               reduction_indices=[1]))
-    #
-    # can be numerically unstable.
-    #
-    # So here we use tf.nn.softmax_cross_entropy_with_logits on the
-    # raw outputs of the nn_layer above, and then average across
-    # the batch.
     diff = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y)
     with tf.name_scope('total'):
       cross_entropy = tf.reduce_mean(diff)
   tf.summary.scalar('cross_entropy', cross_entropy)
 
   with tf.name_scope('train'):
-    optimizer = tf.train.GradientDescentOptimizer(FLAGS.learning_rate)
+    optimizer = tf.train.AdamOptimizer(FLAGS.learning_rate)
     gradients, train_step = Beholder.gradient_helper(optimizer, cross_entropy)
 
   with tf.name_scope('accuracy'):
@@ -140,8 +136,6 @@ def train():
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
   tf.summary.scalar('accuracy', accuracy)
 
-  # Merge all the summaries and write them out to
-  # /tmp/tensorflow/mnist/logs/mnist_with_summaries (by default)
   merged = tf.summary.merge_all()
   train_writer = tf.summary.FileWriter(LOG_DIRECTORY + '/train', sess.graph)
   test_writer = tf.summary.FileWriter(LOG_DIRECTORY + '/test')
@@ -150,12 +144,8 @@ def train():
   visualizer = Beholder(session=sess, 
                         logdir=LOG_DIRECTORY)
 
-  # Train the model, and also write summaries.
-  # Every 10th step, measure test-set accuracy, and write test summaries
-  # All other steps, run train_step on training data, & add training summaries
 
   def feed_dict(train):
-    """Make a TensorFlow feed_dict: maps data onto Tensor placeholders."""
     if train or FLAGS.fake_data:
       xs, ys = mnist.train.next_batch(100, fake_data=FLAGS.fake_data)
       k = FLAGS.dropout
@@ -181,25 +171,22 @@ def train():
     #     train_writer.add_summary(summary, i)
     #     print('Adding run metadata for', i)
     #   else:  # Record a summary
+        print('i', i)
         summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dict(True))
         visualizer.update(
           arrays=gradient_arrays, 
-          frame=np.random.standard_normal((1000, 1000)),
+          frame=lambda: np.random.standard_normal((100, 100)),
         )
         train_writer.add_summary(summary, i)
 
-
-
   train_writer.close()
   test_writer.close()
-
 
 def main(_):
   if tf.gfile.Exists(LOG_DIRECTORY):
     tf.gfile.DeleteRecursively(LOG_DIRECTORY)
   tf.gfile.MakeDirs(LOG_DIRECTORY)
   train()
-
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
