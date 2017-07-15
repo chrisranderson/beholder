@@ -56,7 +56,7 @@ def train():
 
   def weight_variable(shape):
     """Create a weight variable with appropriate initialization."""
-    initial = tf.truncated_normal(shape, stddev=0.1)
+    initial = tf.truncated_normal(shape, stddev=0.01)
     return tf.Variable(initial)
 
   def bias_variable(shape):
@@ -99,7 +99,7 @@ def train():
       tf.summary.histogram('activations', activations)
       return activations
 
-  kernel = tf.Variable(tf.truncated_normal([3, 3, 1, 2], dtype=tf.float32,
+  kernel = tf.Variable(tf.truncated_normal([28, 28, 1, 10], dtype=tf.float32,
                                                      stddev=1e-1), name='conv-weights')
   conv = tf.nn.conv2d(image_shaped_input, kernel, [1, 1, 1, 1], padding='SAME')
   biases = tf.Variable(tf.constant(0.0, shape=[kernel.get_shape().as_list()[-1]], dtype=tf.float32),
@@ -155,22 +155,22 @@ def train():
     return {x: xs, y_: ys, keep_prob: k}
 
   for i in range(FLAGS.max_steps):
-    # if i % 10 == 0:  # Record summaries and test-set accuracy
-    #   summary, acc = sess.run([merged, accuracy], feed_dict=feed_dict(False))
-    #   test_writer.add_summary(summary, i)
-    #   print('Accuracy at step %s: %s' % (i, acc))
-    # else:  # Record train set summaries, and train
-    #   if i % 100 == 99:  # Record execution stats
-    #     run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-    #     run_metadata = tf.RunMetadata()
-    #     summary, _ = sess.run([merged, train_step],
-    #                           feed_dict=feed_dict(True),
-    #                           options=run_options,
-    #                           run_metadata=run_metadata)
-    #     train_writer.add_run_metadata(run_metadata, 'step%03d' % i)
-    #     train_writer.add_summary(summary, i)
-    #     print('Adding run metadata for', i)
-    #   else:  # Record a summary
+    if i % 10 == 0:  # Record summaries and test-set accuracy
+      summary, acc = sess.run([merged, accuracy], feed_dict=feed_dict(False))
+      test_writer.add_summary(summary, i)
+      print('Accuracy at step %s: %s' % (i, acc))
+    else:  # Record train set summaries, and train
+      if i % 100 == 99:  # Record execution stats
+        run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        run_metadata = tf.RunMetadata()
+        summary, _ = sess.run([merged, train_step],
+                              feed_dict=feed_dict(True),
+                              options=run_options,
+                              run_metadata=run_metadata)
+        train_writer.add_run_metadata(run_metadata, 'step%03d' % i)
+        train_writer.add_summary(summary, i)
+        print('Adding run metadata for', i)
+      else:  # Record a summary
         print('i', i)
         summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dict(True))
         visualizer.update(

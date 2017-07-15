@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 from tensorboard.backend.event_processing import plugin_asset_util as pau
-import tensorboard.plugins.beholder.image_util as im_util
+from tensorboard.plugins.beholder import im_util
 
 PLUGIN_NAME = 'beholder'
 TAG_NAME = 'beholder-frame'
@@ -186,7 +186,7 @@ class Beholder():
 
   def _maybe_clear_deque(self):
     '''Clears the deque if certain parts of the config have changed.'''
-    for config_item in ['values', 'mode', 'scaling']:
+    for config_item in ['values', 'mode']:
       if self.config[config_item] != self.old_config[config_item]:
         self.sections_over_time.clear()
         break
