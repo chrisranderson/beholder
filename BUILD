@@ -13,11 +13,20 @@ py_library(
 )
 
 py_library(
+  name = "visualizer",
+  srcs = ["visualizer.py", "shared_config.py"],
+  deps = [
+    ":im_util"
+  ],
+)
+
+py_library(
   name = "beholder",
-  srcs = ["beholder.py"],
+  srcs = ["beholder.py", "shared_config.py"],
   data = ["resources"],
   deps = [
     ":im_util",
+    ":visualizer",
     "//tensorboard/backend/event_processing:plugin_asset_util",
   ],
 )
@@ -27,6 +36,7 @@ py_library(
   name = "beholder_plugin",
   srcs = [
     "beholder_plugin.py",
+    "shared_config.py"
   ],
   srcs_version = "PY2AND3",
   deps = [

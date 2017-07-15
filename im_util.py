@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 
 from math import floor, sqrt
+import time
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -28,53 +29,70 @@ def conv_section(array, section_height, image_width):
     a "section" - a numpy array of shape [section_height, image_width]. In this
     case, conv kernels maintain at least a little bit of spatial similarity.
   '''
+  t1 = time.time()
+
   block_height, block_width, in_channels, out_channels = array.shape
   max_blocks = int((section_height * image_width) / (block_height*block_width))
 
-  '''Reshape the 4d array into a 2d array where kernel variables retain spatial
-  consistency. Individual kernel channels are now stacked horizontally. E.g.
+  # Reshape the 4d array into a 2d array where kernel variables retain spatial
+  # consistency. Individual kernel channels are now stacked horizontally. E.g.
 
-  x = np.array([
-    [[[1, 2, 3, 4], [5, 6, 7, 8]],
-     [[1, 2, 3, 4], [5, 6, 7, 8]],
-     [[1, 2, 3, 4], [5, 6, 7, 8]]],
+  # x = np.array([
+  #   [[[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 121], ],
+  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 122], ],
+  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 123], ]],
+  #   [[[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 124], ],
+  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 125], ],
+  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 126], ]],
+  #   [[[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 127], ],
+  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 128], ],
+  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 129], ]],
+  # ])
 
-    [[[1, 2, 3, 4], [5, 6, 7, 8]],
-     [[1, 2, 3, 4], [5, 6, 7, 8]],
-     [[1, 2, 3, 4], [5, 6, 7, 8]]],
-  ])
+  # >>> x[:, :, 0, 0]
+  # array([[1, 1, 1],
+  #        [1, 1, 1]])
 
-  >>> x[:, :, 0, 0]
-  array([[1, 1, 1],
-         [1, 1, 1]])
+  # >>> x[:, :, 0, 1]
+  # array([[2, 2, 2],
+  #        [2, 2, 2]])
 
-  >>> x[:, :, 0, 1]
-  array([[2, 2, 2],
-         [2, 2, 2]])
+  # >>> x[:, :, 1, 0]
+  # array([[5, 5, 5],
+  #        [5, 5, 5]])
 
-  >>> x[:, :, 1, 0]
-  array([[5, 5, 5],
-         [5, 5, 5]])
+  # >>>x.reshape(2, 3*2*4, order='F')
+  #[[11, 12, 13, 5, 5, 5, 2, 2, 2, 6, 6, 6, 3, 3, 3, 7, 7, 7, 4, 4, 4, 8, 8, 8],
+  # [14, 15, 16, 5, 5, 5, 2, 2, 2, 6, 6, 6, 3, 3, 3, 7, 7, 7, 4, 4, 4, 8, 8, 8]]
 
-  >>>x.reshape(2, 3*2*4, order='F')
-  [[1, 1, 1, 5, 5, 5, 2, 2, 2, 6, 6, 6, 3, 3, 3, 7, 7, 7, 4, 4, 4, 8, 8, 8],
-   [1, 1, 1, 5, 5, 5, 2, 2, 2, 6, 6, 6, 3, 3, 3, 7, 7, 7, 4, 4, 4, 8, 8, 8]]
-  '''
   blocks_2d = array.reshape(block_height,
                             block_width * in_channels * out_channels,
                             order='F')[:, :max_blocks * block_width]
 
+  # reorder the blocks from [1, 1, 1, 5, 5, 5] to [1, 1, 1, 2, 2, 2] etc.
+  a = blocks_2d.reshape(block_height, block_width, -1, order='F')
+
+  reordered_portions = []
+  for x in range(block_height):
+    portion = a[:, :, x::block_height].reshape(block_height, -1, order='F')
+    reordered_portions.append(portion)
+
+  blocks_2d = np.hstack(reordered_portions)
+
   block_count = in_channels * out_channels
   ratio = section_height / image_width
 
+  # These commented out lines try to keep everything looking square.
   # These come from solving these equations:
   #   block_height * row_count / block_width * col_count == ratio
   #   row_count * col_count == block_count
-  row_count = int(sqrt(ratio * block_width * block_count / block_height)) + 1
-  col_count = int(block_count / row_count)
+  # row_count = int(sqrt(ratio * block_width * block_count / block_height)) + 1
+  # col_count = int(block_count / row_count)
+  row_count = in_channels
+  col_count = out_channels # every column is a different filter
   row_width = col_count * block_width
 
-  # TODO: is there a better way to reshape these?
+  # TODO: is there a more efficient way to reshape these?
   # Take chunks out of the 2d matrix of filters and stack them vertically
   rows = []
   for row_number in range(row_count):
@@ -94,7 +112,9 @@ def conv_section(array, section_height, image_width):
     section = rows[0]
   else:
     section = np.vstack(rows)
+  t2 = time.time()
 
+  print('t2-t1', t2-t1)
   return resize(section, section_height, image_width)
 
 

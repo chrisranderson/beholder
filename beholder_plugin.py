@@ -15,34 +15,30 @@ from werkzeug import wrappers
 from tensorboard.backend import http_util
 from tensorboard.backend.event_processing import plugin_asset_util as pau
 from tensorboard.plugins import base_plugin
-from tensorboard.plugins.beholder import beholder
+from tensorboard.plugins.beholder.shared_config import SECTION_HEIGHT, \
+  SUMMARY_FILENAME, IMAGE_WIDTH, TAG_NAME, PLUGIN_NAME
 
 # TODO: will this cause problems elsewhere? Added because of broken pipe errors.
 # from signal import signal, SIGPIPE, SIG_DFL
 # signal(SIGPIPE, signal_handler)
 
-TAG_NAME = beholder.TAG_NAME
-
-_PLUGIN_PREFIX_ROUTE = beholder.PLUGIN_NAME
 FRAME_ROUTE = '/beholder-frame'
 CONFIG_ROUTE = '/change-config'
-RUN_NAME = 'plugins/{}'.format(_PLUGIN_PREFIX_ROUTE)
+RUN_NAME = 'plugins/{}'.format(PLUGIN_NAME)
 
 
 class BeholderPlugin(base_plugin.TBPlugin):
 
-  plugin_name = _PLUGIN_PREFIX_ROUTE
+  plugin_name = PLUGIN_NAME
 
   def __init__(self, context):
     self._MULTIPLEXER = context.multiplexer
     plugin_logdir = pau.PluginDirectory(context.logdir,
-                                        _PLUGIN_PREFIX_ROUTE)
-    self._SUMMARY_PATH = '{}/{}'.format(plugin_logdir,
-                                        beholder.SUMMARY_FILENAME)
+                                        PLUGIN_NAME)
+    self._SUMMARY_PATH = '{}/{}'.format(plugin_logdir, SUMMARY_FILENAME)
     self._CONFIG_PATH = '{}/{}'.format(plugin_logdir,
                                        'config')
-    self.most_recent_frame = np.zeros((beholder.SECTION_HEIGHT,
-                                       beholder.IMAGE_WIDTH))
+    self.most_recent_frame = np.zeros((SECTION_HEIGHT, IMAGE_WIDTH))
     self.served_new = 0
     self.served_old = 0.0001
 
@@ -142,7 +138,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
 
   @wrappers.Request.application
-  def _serve_beholder_frame(self, request):
+  def _serve_beholder_frame(self, request): # pylint: disable=unused-argument
     # print('percent new frames',
     #        self.served_new / (self.served_old + self.served_new))
     mimetype = 'multipart/x-mixed-replace; boundary=frame'
