@@ -1,10 +1,10 @@
 from __future__ import division, print_function
 
 from math import floor, sqrt
-import time
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+np.set_printoptions(linewidth=99999)
 
 font_path = "tensorboard/plugins/beholder/resources/roboto-mono.ttf"
 FONT = ImageFont.truetype(font_path, 48)
@@ -29,8 +29,6 @@ def conv_section(array, section_height, image_width):
     a "section" - a numpy array of shape [section_height, image_width]. In this
     case, conv kernels maintain at least a little bit of spatial similarity.
   '''
-  t1 = time.time()
-
   block_height, block_width, in_channels, out_channels = array.shape
   max_blocks = int((section_height * image_width) / (block_height*block_width))
 
@@ -69,20 +67,19 @@ def conv_section(array, section_height, image_width):
                             block_width * in_channels * out_channels,
                             order='F')[:, :max_blocks * block_width]
 
-  # reorder the blocks from [1, 1, 1, 5, 5, 5] to [1, 1, 1, 2, 2, 2] etc.
   a = blocks_2d.reshape(block_height, block_width, -1, order='F')
 
   reordered_portions = []
-  for x in range(block_height):
-    portion = a[:, :, x::block_height].reshape(block_height, -1, order='F')
+  for x in range(in_channels):
+    portion = a[:, :, x::in_channels].reshape(block_height, -1, order='F')
     reordered_portions.append(portion)
 
   blocks_2d = np.hstack(reordered_portions)
 
-  block_count = in_channels * out_channels
-  ratio = section_height / image_width
 
   # These commented out lines try to keep everything looking square.
+  # ratio = section_height / image_width
+  # block_count = in_channels * out_channels
   # These come from solving these equations:
   #   block_height * row_count / block_width * col_count == ratio
   #   row_count * col_count == block_count
@@ -112,10 +109,8 @@ def conv_section(array, section_height, image_width):
     section = rows[0]
   else:
     section = np.vstack(rows)
-  t2 = time.time()
 
-  print('t2-t1', t2-t1)
-  return resize(section, section_height, image_width)
+  return section
 
 
 def arrays_to_sections(arrays, section_height, image_width):
@@ -129,7 +124,7 @@ def arrays_to_sections(arrays, section_height, image_width):
 
   for array in arrays:
     if len(array.shape) == 4:
-      sections.append(conv_section(array, section_height, image_width))
+      section = conv_section(array, section_height, image_width)
     else:
       flattened_array = np.ravel(array)[:section_area]
       cell_count = np.prod(flattened_array.shape)
@@ -144,10 +139,10 @@ def arrays_to_sections(arrays, section_height, image_width):
 
       # Truncate whatever remaining values there are that don't fit. Hopefully,
       # it doesn't matter that the last few (< section count) aren't there.
-      reshaped = np.reshape(flattened_array[:row_count * col_count],
-                            (row_count, col_count))
-      resized = resize(reshaped, section_height, image_width)
-      sections.append(resized)
+      section = np.reshape(flattened_array[:row_count * col_count],
+                           (row_count, col_count))
+
+    sections.append(resize(section, section_height, image_width))
 
   return sections
 

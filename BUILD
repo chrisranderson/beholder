@@ -9,7 +9,17 @@ exports_files(["LICENSE"])
 
 py_library(
   name = "im_util",
+  data = ["resources"],
   srcs = ["im_util.py"],
+)
+
+py_test(
+  name = "im_util_test",
+  srcs = ["im_util_test.py", "shared_config.py"],
+  srcs_version = "PY2AND3",
+  deps = [
+    ":im_util"
+  ]
 )
 
 py_library(
@@ -23,7 +33,6 @@ py_library(
 py_library(
   name = "beholder",
   srcs = ["beholder.py", "shared_config.py"],
-  data = ["resources"],
   deps = [
     ":im_util",
     ":visualizer",
