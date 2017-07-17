@@ -9,6 +9,8 @@ np.set_printoptions(linewidth=99999)
 font_path = "tensorboard/plugins/beholder/resources/roboto-mono.ttf"
 FONT = ImageFont.truetype(font_path, 16)
 
+MIN_SQUARE_SIZE = 4
+
 
 def resize(nparray, height, width):
   image = Image.fromarray(nparray)
@@ -66,7 +68,8 @@ def conv_section(array, section_height, image_width):
   block_height, block_width, in_channels = array.shape[:3]
   rows = []
 
-  max_element_count = section_height * image_width
+  #
+  max_element_count = section_height * int(image_width / MIN_SQUARE_SIZE)
   element_count = 0
 
   for i in range(in_channels):
@@ -92,7 +95,7 @@ def arrays_to_sections(arrays, section_height, image_width):
     if len(array.shape) == 4:
       section = conv_section(array, section_height, image_width)
     else:
-      flattened_array = np.ravel(array)[:section_area]
+      flattened_array = np.ravel(array)[:int(section_area / MIN_SQUARE_SIZE)]
       cell_count = np.prod(flattened_array.shape)
       cell_area = section_area / cell_count
 
