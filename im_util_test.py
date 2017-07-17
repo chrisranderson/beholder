@@ -10,20 +10,25 @@ class ImUtilTest(tf.test.TestCase):
   def setUp(self):
     pass
 
-
   def test_conv_section(self):
-    for _ in range(100):
-      shape = np.random.randint(1, 6, 4)
-      height, width, in_channel, out_channel = shape
-      array = np.reshape(range(np.prod(shape)), shape)
-      reshaped = im_util.conv_section(array, SECTION_HEIGHT, IMAGE_WIDTH)
+    max_size = 5
 
-      for in_number in range(in_channel):
-        for out_number in range(out_channel):
-          to_test = reshaped[in_number * height: in_number * height + height,
-                             out_number * width: out_number * width + width]
-          true = array[:, :, in_number, out_number]
-          self.assertAllEqual(true, to_test)
+    for height in range(1, max_size): # pylint:disable=too-many-nested-blocks
+      for width in range(1, max_size):
+        for in_channel in range(1, max_size):
+          for out_channel in range(1, max_size):
+            shape = [height, width, in_channel, out_channel]
+            array = np.reshape(range(np.prod(shape)), shape)
+            reshaped = im_util.conv_section(array, SECTION_HEIGHT, IMAGE_WIDTH)
+
+            for in_number in range(in_channel):
+              for out_number in range(out_channel):
+                start_row = in_number * height
+                start_col = out_number * width
+                to_test = reshaped[start_row: start_row + height,
+                                   start_col: start_col + width]
+                true = array[:, :, in_number, out_number]
+                self.assertAllEqual(true, to_test)
 
 if __name__ == '__main__':
   tf.test.main()

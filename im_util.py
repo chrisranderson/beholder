@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 np.set_printoptions(linewidth=99999)
 
 font_path = "tensorboard/plugins/beholder/resources/roboto-mono.ttf"
-FONT = ImageFont.truetype(font_path, 48)
+FONT = ImageFont.truetype(font_path, 16)
 
 
 def resize(nparray, height, width):
@@ -20,97 +20,63 @@ def global_extrema(arrays):
 
 
 def conv_section(array, section_height, image_width):
-  '''Reshape the conv layer so that the channels of the kernels stay together.
+  '''Reshape a rank 4 array to be rank 2, where each column of block_width is a
+  filter, and each row of block height is an input channel. For example:
 
-  Args:
-    array: a numpy array of shape [a, b, c, d]
+  [[[[ 11,  21,  31,  41],
+     [ 51,  61,  71,  81],
+     [ 91, 101, 111, 121]],
+    [[ 12,  22,  32,  42],
+     [ 52,  62,  72,  82],
+     [ 92, 102, 112, 122]],
+    [[ 13,  23,  33,  43],
+     [ 53,  63,  73,  83],
+     [ 93, 103, 113, 123]]],
+   [[[ 14,  24,  34,  44],
+     [ 54,  64,  74,  84],
+     [ 94, 104, 114, 124]],
+    [[ 15,  25,  35,  45],
+     [ 55,  65,  75,  85],
+     [ 95, 105, 115, 125]],
+    [[ 16,  26,  36,  46],
+     [ 56,  66,  76,  86],
+     [ 96, 106, 116, 126]]],
+   [[[ 17,  27,  37,  47],
+     [ 57,  67,  77,  87],
+     [ 97, 107, 117, 127]],
+    [[ 18,  28,  38,  48],
+     [ 58,  68,  78,  88],
+     [ 98, 108, 118, 128]],
+    [[ 19,  29,  39,  49],
+     [ 59,  69,  79,  89],
+     [ 99, 109, 119, 129]]]]
 
-  Returns:
-    a "section" - a numpy array of shape [section_height, image_width]. In this
-    case, conv kernels maintain at least a little bit of spatial similarity.
+     should be reshaped to:
+
+     [[ 11,  12,  13,  21,  22,  23,  31,  32,  33,  41,  42,  43],
+      [ 14,  15,  16,  24,  25,  26,  34,  35,  36,  44,  45,  46],
+      [ 17,  18,  19,  27,  28,  29,  37,  38,  39,  47,  48,  49],
+      [ 51,  52,  53,  61,  62,  63,  71,  72,  73,  81,  82,  83],
+      [ 54,  55,  56,  64,  65,  66,  74,  75,  76,  84,  85,  86],
+      [ 57,  58,  59,  67,  68,  69,  77,  78,  79,  87,  88,  89],
+      [ 91,  92,  93, 101, 102, 103, 111, 112, 113, 121, 122, 123],
+      [ 94,  95,  96, 104, 105, 106, 114, 115, 116, 124, 125, 126],
+      [ 97,  98,  99, 107, 108, 109, 117, 118, 119, 127, 128, 129]]
   '''
-  block_height, block_width, in_channels, out_channels = array.shape
-  max_blocks = int((section_height * image_width) / (block_height*block_width))
-
-  # Reshape the 4d array into a 2d array where kernel variables retain spatial
-  # consistency. Individual kernel channels are now stacked horizontally. E.g.
-
-  # x = np.array([
-  #   [[[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 121], ],
-  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 122], ],
-  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 123], ]],
-  #   [[[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 124], ],
-  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 125], ],
-  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 126], ]],
-  #   [[[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 127], ],
-  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 128], ],
-  #    [[1, 2, 3, 4],[5, 6, 7, 8], [9, 10, 11, 129], ]],
-  # ])
-
-  # >>> x[:, :, 0, 0]
-  # array([[1, 1, 1],
-  #        [1, 1, 1]])
-
-  # >>> x[:, :, 0, 1]
-  # array([[2, 2, 2],
-  #        [2, 2, 2]])
-
-  # >>> x[:, :, 1, 0]
-  # array([[5, 5, 5],
-  #        [5, 5, 5]])
-
-  # >>>x.reshape(2, 3*2*4, order='F')
-  #[[11, 12, 13, 5, 5, 5, 2, 2, 2, 6, 6, 6, 3, 3, 3, 7, 7, 7, 4, 4, 4, 8, 8, 8],
-  # [14, 15, 16, 5, 5, 5, 2, 2, 2, 6, 6, 6, 3, 3, 3, 7, 7, 7, 4, 4, 4, 8, 8, 8]]
-
-  blocks_2d = array.reshape(block_height,
-                            block_width * in_channels * out_channels,
-                            order='F')[:, :max_blocks * block_width]
-
-  a = blocks_2d.reshape(block_height, block_width, -1, order='F')
-
-  reordered_portions = []
-  for x in range(in_channels):
-    portion = a[:, :, x::in_channels].reshape(block_height, -1, order='F')
-    reordered_portions.append(portion)
-
-  blocks_2d = np.hstack(reordered_portions)
-
-
-  # These commented out lines try to keep everything looking square.
-  # ratio = section_height / image_width
-  # block_count = in_channels * out_channels
-  # These come from solving these equations:
-  #   block_height * row_count / block_width * col_count == ratio
-  #   row_count * col_count == block_count
-  # row_count = int(sqrt(ratio * block_width * block_count / block_height)) + 1
-  # col_count = int(block_count / row_count)
-  row_count = in_channels
-  col_count = out_channels # every column is a different filter
-  row_width = col_count * block_width
-
-  # TODO: is there a more efficient way to reshape these?
-  # Take chunks out of the 2d matrix of filters and stack them vertically
+  block_height, block_width, in_channels = array.shape[:3]
   rows = []
-  for row_number in range(row_count):
-    slice_start = row_number * row_width
-    slice_end = slice_start + (row_width)
-    row = blocks_2d[:, slice_start:slice_end]
 
-    if row.shape[1] == 0:
-      continue
+  max_element_count = section_height * image_width
+  element_count = 0
 
-    if row.shape[1] != row_width:
-      row = np.pad(row, [[0, 0], [0, row_width - row.shape[1]]], 'minimum')
+  for i in range(in_channels):
+    rows.append(array[:, :, i, :].reshape(block_height, -1, order='F'))
+    element_count += block_height * in_channels * block_width
 
-    rows.append(row)
+    if element_count >= max_element_count:
+      break
 
-  if len(rows) == 1:
-    section = rows[0]
-  else:
-    section = np.vstack(rows)
-
-  return section
+  return np.vstack(rows)
 
 
 def arrays_to_sections(arrays, section_height, image_width):
@@ -170,10 +136,9 @@ def scale_sections(sections, scaling_scope):
 
 
 def text_image(height, width, text):
-  image = Image.new('L', (3*width, 3*height), (245))
+  image = Image.new('L', (width, height), (245))
   draw = ImageDraw.Draw(image)
-  draw.text((20, 50), text, (33), font=FONT)
-  image = image.resize((width, height), Image.ANTIALIAS)
+  draw.text((7, 17), text, font=FONT)
   return np.array(image).astype(np.uint8)
 
 

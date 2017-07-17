@@ -9,3 +9,6 @@ notes.txt
 /bazel-*
 tf_beholder_dashboard/data
 vgg_demo
+rnn_demo
+
+*.pyc
