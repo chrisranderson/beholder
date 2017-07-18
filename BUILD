@@ -32,7 +32,7 @@ py_library(
 
 py_library(
   name = "beholder",
-  srcs = ["beholder.py", "shared_config.py"],
+  srcs = ["beholder.py", "shared_config.py", "video_writing.py"],
   deps = [
     ":im_util",
     ":visualizer",

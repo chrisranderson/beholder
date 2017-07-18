@@ -12,3 +12,5 @@ vgg_demo
 rnn_demo
 
 *.pyc
+
+*.mp4

@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 np.set_printoptions(linewidth=99999)
 
 font_path = "tensorboard/plugins/beholder/resources/roboto-mono.ttf"
-FONT = ImageFont.truetype(font_path, 16)
+FONT = ImageFont.truetype(font_path, 12)
 
 MIN_SQUARE_SIZE = 4
 

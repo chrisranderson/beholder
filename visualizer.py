@@ -5,14 +5,14 @@ import tensorflow as tf
 
 from tensorboard.plugins.beholder import im_util
 from tensorboard.plugins.beholder.shared_config import INFO_HEIGHT,\
-  SECTION_HEIGHT, IMAGE_WIDTH, default_config
+  SECTION_HEIGHT, IMAGE_WIDTH, DEFAULT_CONFIG
 
 class Visualizer():
 
   def __init__(self, session):
-    self.sections_over_time = deque([], default_config()['window_size'])
-    self.config = default_config()
-    self.old_config = default_config()
+    self.sections_over_time = deque([], DEFAULT_CONFIG['window_size'])
+    self.config = DEFAULT_CONFIG
+    self.old_config = DEFAULT_CONFIG
     self.SESSION = session
 
 

@@ -10,13 +10,16 @@ from tensorboard.backend.event_processing import plugin_asset_util as pau
 from tensorboard.plugins.beholder import im_util
 from tensorboard.plugins.beholder.visualizer import Visualizer
 from tensorboard.plugins.beholder.shared_config import PLUGIN_NAME, TAG_NAME,\
-  SUMMARY_FILENAME, default_config, INFO_HEIGHT, IMAGE_WIDTH
+  SUMMARY_FILENAME, DEFAULT_CONFIG, INFO_HEIGHT, IMAGE_WIDTH
+from tensorboard.plugins.beholder import video_writing
 
+default_config = DEFAULT_CONFIG
 
 class Beholder():
 
   def __init__(self, session, logdir):
     self.visualizer = Visualizer(session)
+    self.video_writer = None
 
     self.LOGDIR_ROOT = logdir
     self.PLUGIN_LOGDIR = pau.PluginDirectory(logdir, PLUGIN_NAME)
@@ -28,8 +31,8 @@ class Beholder():
     self.last_image_height = 0
     self.last_update_time = time.time()
 
-
   def _update_config(self):
+    global default_config
     '''Reads the config file from disk or creates a new one.'''
     try:
       json_string = pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
@@ -38,9 +41,9 @@ class Beholder():
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
 
       with open(self.PLUGIN_LOGDIR + '/config', 'w') as config_file:
-        config_file.write(json.dumps(default_config()))
+        config_file.write(json.dumps(default_config))
 
-      config = default_config()
+      config = default_config
 
     for key, value in config.items():
       try:
@@ -48,6 +51,13 @@ class Beholder():
       except ValueError:
         pass
 
+      if value == 'false':
+        config[key] = False
+
+      if value == 'true':
+        config[key] = True
+
+    default_config = config
     return config
 
 
@@ -86,6 +96,28 @@ class Beholder():
       return time.time() >= earliest_time
 
 
+  def _update_recording(self, frame, config):
+    is_recording, fps = config['is_recording'], config['FPS']
+    filename = self.PLUGIN_LOGDIR + '/video-{}.mp4'.format(time.time())
+
+    if is_recording:
+      if self.video_writer is None or frame.shape != self.video_writer.size:
+        print('Beginning recording.')
+        try:
+          self.video_writer = video_writing.FFMPEG_VideoWriter(filename,
+                                                               frame.shape,
+                                                               fps)
+        except OSError:
+          print('Something broke with ffmpeg. Saving frames to disk instead.')
+          self.video_writer = video_writing.PNGWriter(self.PLUGIN_LOGDIR,
+                                                      frame.shape)
+      self.video_writer.write_frame(frame)
+    elif not is_recording and self.video_writer is not None:
+      print('Finishing recording.')
+      self.video_writer.close()
+      self.video_writer = None
+
+
   # TODO: blanket try and except for production? I don't someone's script to die
   #       after weeks of running because of a visualization.
   def update(self, arrays=None, frame=None):
@@ -114,6 +146,9 @@ class Beholder():
         self.summary_op = tf.summary.tensor_summary(TAG_NAME,
                                                     self.frame_placeholder)
       self._write_summary(final_image)
+      self._update_recording(final_image, config)
+
+
       self.last_image_height = image_height
 
   ##############################################################################
