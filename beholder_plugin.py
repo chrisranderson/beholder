@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import io
-import json
+import pickle
 import time
 
 from google.protobuf import message
@@ -101,13 +101,25 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
   @wrappers.Request.application
   def _serve_change_config(self, request):
-    config = request.form
-    self.FPS = int(config['FPS'])
+    config = {}
+
+    for key, value in request.form.items():
+      try:
+        config[key] = int(value)
+      except ValueError:
+        if value == 'false':
+          config[key] = False
+        elif value == 'true':
+          config[key] = True
+        else:
+          config[key] = value
+
+    self.FPS = config['FPS']
 
     try:
       with open(self._CONFIG_PATH, 'w') as file:
-        json_string = json.dumps(config)
-        file.write(json_string)
+        pickle.dump(config, file)
+
     except IOError:
       print('Could not write config file. Does the logdir exist?')
 

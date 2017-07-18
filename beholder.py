@@ -1,6 +1,6 @@
 from __future__ import division, print_function
 
-import json
+import pickle
 import time
 
 import tensorflow as tf
@@ -31,31 +31,20 @@ class Beholder():
     self.last_image_height = 0
     self.last_update_time = time.time()
 
+    tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
+    with open(self.PLUGIN_LOGDIR + '/config', 'w') as config_file:
+      pickle.dump(default_config, config_file)
+
   def _update_config(self):
-    global default_config
     '''Reads the config file from disk or creates a new one.'''
+    global default_config
+    filename = self.PLUGIN_LOGDIR + '/config'
+
     try:
-      json_string = pau.RetrieveAsset(self.LOGDIR_ROOT, PLUGIN_NAME, 'config')
-      config = json.loads(json_string)
-    except (KeyError, ValueError):
-      tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
-
-      with open(self.PLUGIN_LOGDIR + '/config', 'w') as config_file:
-        config_file.write(json.dumps(default_config))
-
+      with open(filename, 'r') as file:
+        config = pickle.load(file)
+    except EOFError:
       config = default_config
-
-    for key, value in config.items():
-      try:
-        config[key] = int(value)
-      except ValueError:
-        pass
-
-      if value == 'false':
-        config[key] = False
-
-      if value == 'true':
-        config[key] = True
 
     default_config = config
     return config

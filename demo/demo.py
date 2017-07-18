@@ -37,7 +37,7 @@ Beholder = beholder.Beholder
 
 FLAGS = None
 
-LOG_DIRECTORY = '/tmp/tf-beholder'
+LOG_DIRECTORY = '/tmp/beholder-demo'
 
 def train():
   mnist = input_data.read_data_sets(FLAGS.data_dir,

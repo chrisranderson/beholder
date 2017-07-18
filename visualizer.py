@@ -115,7 +115,7 @@ class Visualizer():
       arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
       final_image = self._arrays_to_image(arrays)
 
-    if self.config['values'] == 'arrays':
+    elif self.config['values'] == 'arrays':
       if arrays is None:
         message = "Arrays weren't passed into the update function."
         final_image = im_util.text_image(INFO_HEIGHT, IMAGE_WIDTH, message)
