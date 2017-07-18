@@ -57,3 +57,28 @@ py_library(
     "//tensorboard/plugins:base_plugin",
   ],
 )
+
+py_binary(
+    name = "tensorboard",
+    srcs = ["main.py"],
+    main = "main.py",
+    srcs_version = "PY2AND3",
+    deps = [
+        "//tensorboard:util",
+        "//tensorboard:version",
+        "//tensorboard/backend:application",
+        "//tensorboard/backend/event_processing:event_file_inspector",
+        "//tensorboard/plugins/audio:audio_plugin",
+        "//tensorboard/plugins/core:core_plugin",
+        "//tensorboard/plugins/distribution:distributions_plugin",
+        "//tensorboard/plugins/graph:graphs_plugin",
+        "//tensorboard/plugins/histogram:histograms_plugin",
+        "//tensorboard/plugins/image:images_plugin",
+        "//tensorboard/plugins/profile:profile_plugin",
+        "//tensorboard/plugins/projector:projector_plugin",
+        "//tensorboard/plugins/scalar:scalars_plugin",
+        "//tensorboard/plugins/text:text_plugin",
+        "//tensorboard/plugins/beholder:beholder_plugin",
+        "@org_pocoo_werkzeug//:werkzeug",
+    ],
+)
