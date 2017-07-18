@@ -2,7 +2,7 @@ PLUGIN_NAME = 'beholder'
 
 TAG_NAME = 'beholder-frame'
 SUMMARY_FILENAME = 'frame.summary'
- 
+
 DEFAULT_CONFIG = {
     'values': 'trainable_variables',
     'mode': 'variance',
@@ -12,6 +12,5 @@ DEFAULT_CONFIG = {
     'is_recording': False
 }
 
-INFO_HEIGHT = 40
 SECTION_HEIGHT = 128
 IMAGE_WIDTH = 512

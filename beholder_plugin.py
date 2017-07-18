@@ -134,7 +134,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
       if self.FPS == 0:
         continue
       else:
-        time.sleep(1/self.FPS)
+        time.sleep(1/(self.FPS + 1))
 
       array = self._get_image_from_summary()
       image = Image.fromarray(array, mode='L') # L: 8-bit grayscale

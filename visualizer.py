@@ -1,11 +1,14 @@
 from collections import deque
+from math import floor, sqrt
 
 import numpy as np
 import tensorflow as tf
 
 from tensorboard.plugins.beholder import im_util
-from tensorboard.plugins.beholder.shared_config import INFO_HEIGHT,\
-  SECTION_HEIGHT, IMAGE_WIDTH, DEFAULT_CONFIG
+from tensorboard.plugins.beholder.shared_config import SECTION_HEIGHT,\
+  IMAGE_WIDTH, DEFAULT_CONFIG
+
+MIN_SQUARE_SIZE = 4
 
 class Visualizer():
 
@@ -16,37 +19,103 @@ class Visualizer():
     self.SESSION = session
 
 
-  def _get_section_info_images(self, arrays, sections):
-    '''Renders images that go above each section.
+  def conv_section(self, array, section_height, image_width):
+    '''Reshape a rank 4 array to be rank 2, where each column of block_width is
+    a filter, and each row of block height is an input channel. For example:
 
-    Args:
-      arrays: a list of np arrays.
-      sections: unscaled nparrays
+    [[[[ 11,  21,  31,  41],
+       [ 51,  61,  71,  81],
+       [ 91, 101, 111, 121]],
+      [[ 12,  22,  32,  42],
+       [ 52,  62,  72,  82],
+       [ 92, 102, 112, 122]],
+      [[ 13,  23,  33,  43],
+       [ 53,  63,  73,  83],
+       [ 93, 103, 113, 123]]],
+     [[[ 14,  24,  34,  44],
+       [ 54,  64,  74,  84],
+       [ 94, 104, 114, 124]],
+      [[ 15,  25,  35,  45],
+       [ 55,  65,  75,  85],
+       [ 95, 105, 115, 125]],
+      [[ 16,  26,  36,  46],
+       [ 56,  66,  76,  86],
+       [ 96, 106, 116, 126]]],
+     [[[ 17,  27,  37,  47],
+       [ 57,  67,  77,  87],
+       [ 97, 107, 117, 127]],
+      [[ 18,  28,  38,  48],
+       [ 58,  68,  78,  88],
+       [ 98, 108, 118, 128]],
+      [[ 19,  29,  39,  49],
+       [ 59,  69,  79,  89],
+       [ 99, 109, 119, 129]]]]
 
-    Returns:
-      A list of np arrays.
+       should be reshaped to:
+
+       [[ 11,  12,  13,  21,  22,  23,  31,  32,  33,  41,  42,  43],
+        [ 14,  15,  16,  24,  25,  26,  34,  35,  36,  44,  45,  46],
+        [ 17,  18,  19,  27,  28,  29,  37,  38,  39,  47,  48,  49],
+        [ 51,  52,  53,  61,  62,  63,  71,  72,  73,  81,  82,  83],
+        [ 54,  55,  56,  64,  65,  66,  74,  75,  76,  84,  85,  86],
+        [ 57,  58,  59,  67,  68,  69,  77,  78,  79,  87,  88,  89],
+        [ 91,  92,  93, 101, 102, 103, 111, 112, 113, 121, 122, 123],
+        [ 94,  95,  96, 104, 105, 106, 114, 115, 116, 124, 125, 126],
+        [ 97,  98,  99, 107, 108, 109, 117, 118, 119, 127, 128, 129]]
     '''
-    images = []
+    block_height, block_width, in_channels = array.shape[:3]
+    rows = []
 
-    if self.config['values'] == 'trainable_variables':
-      names = [x.name for x in tf.trainable_variables()]
-    else:
-      names = range(len(arrays))
+    max_element_count = section_height * int(image_width / MIN_SQUARE_SIZE)
+    element_count = 0
 
-    for name, array, section in zip(names, arrays, sections):
-      minimum = section.min()
-      maximum = section.max()
-      shape = array.shape
-      min_text = 'min: {:.3e}'.format(minimum)
-      max_text = 'max: {:.3e}'.format(maximum)
-      range_text = 'range: {:.3e}'.format(maximum - minimum)
+    for i in range(in_channels):
+      rows.append(array[:, :, i, :].reshape(block_height, -1, order='F'))
+      element_count += block_height * in_channels * block_width
 
-      template = '{:^30}{:^15}{:^20}{:^20}{:^20}'
-      final_text = template.format(name, shape, min_text, max_text, range_text)
+      if element_count >= max_element_count:
+        break
 
-      images.append(im_util.text_image(INFO_HEIGHT, IMAGE_WIDTH, final_text))
+    return np.vstack(rows)
 
-    return images
+
+  def arrays_to_sections(self, arrays, section_height, image_width):
+    '''
+    input: unprocessed numpy arrays.
+    returns: columns of the size that they will appear in the image, not scaled
+             for display. That needs to wait until after variance is computed.
+    '''
+    sections = []
+    section_area = section_height * image_width
+
+    for array in arrays:
+      if len(array.shape) == 4:
+        section = self.conv_section(array, section_height, image_width)
+      else:
+        flattened_array = np.ravel(array)[:int(section_area / MIN_SQUARE_SIZE)]
+        cell_count = np.prod(flattened_array.shape)
+        cell_area = section_area / cell_count
+
+        cell_side_length = floor(sqrt(cell_area))
+        row_count = max(1, int(section_height / cell_side_length))
+        col_count = int(cell_count / row_count)
+
+        # Reshape the truncated array so that it has the same aspect ratio as
+        # the section.
+
+        # Truncate whatever remaining values there are that don't fit. Hopefully
+        # it doesn't matter that the last few (< section count) aren't there.
+        section = np.reshape(flattened_array[:row_count * col_count],
+                             (row_count, col_count))
+
+      sections.append(im_util.resize(section, section_height, image_width))
+
+    self.sections_over_time.append(sections)
+
+    if self.config['mode'] == 'variance':
+      sections = self._sections_to_variance_sections()
+
+    return sections
 
 
   def _sections_to_variance_sections(self):
@@ -65,30 +134,10 @@ class Visualizer():
     return variance_sections
 
 
-  def _arrays_to_image(self, arrays):
-    '''
-    Args:
-      arrays: a list of np arrays to be visualized.
-
-    Returns:
-      a numpy array image ready to be turned into a summary.
-    '''
-    sections = im_util.arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
-    self.sections_over_time.append(sections)
-
-    if self.config['mode'] == 'variance':
-      sections = self._sections_to_variance_sections()
-
-    section_info_images = self._get_section_info_images(arrays, sections)
+  def _sections_to_image(self, sections):
     scaled_sections = im_util.scale_sections(sections, self.config['scaling'])
-    image_stack = []
-
-    for info, section in zip(section_info_images, scaled_sections):
-      image_stack.append(info)
-      image_stack.append(section)
-
-    return im_util.resize(np.vstack(image_stack).astype(np.uint8),
-                          len(arrays) * (SECTION_HEIGHT + INFO_HEIGHT),
+    return im_util.resize(np.vstack(scaled_sections).astype(np.uint8),
+                          len(sections) * (SECTION_HEIGHT),
                           IMAGE_WIDTH)
 
 
@@ -107,21 +156,19 @@ class Visualizer():
 
 
   def build_frame(self, arrays):
-    # The visualization is a lot smoother if last_update_time is updated here
-    # rather than after everything is done.
     self._maybe_clear_deque()
 
     if self.config['values'] == 'trainable_variables':
       arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
-      final_image = self._arrays_to_image(arrays)
 
     elif self.config['values'] == 'arrays':
       if arrays is None:
-        message = "Arrays weren't passed into the update function."
-        final_image = im_util.text_image(INFO_HEIGHT, IMAGE_WIDTH, message)
+        arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
       else:
         arrays = arrays if isinstance(arrays, list) else [arrays]
-        final_image = self._arrays_to_image(arrays)
+
+    sections = self.arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
+    final_image = self._sections_to_image(sections)
 
     return final_image
 

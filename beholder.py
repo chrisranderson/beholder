@@ -3,6 +3,7 @@ from __future__ import division, print_function
 import pickle
 import time
 
+import numpy as np
 import tensorflow as tf
 
 from tensorboard.backend.event_processing import plugin_asset_util as pau
@@ -10,7 +11,7 @@ from tensorboard.backend.event_processing import plugin_asset_util as pau
 from tensorboard.plugins.beholder import im_util
 from tensorboard.plugins.beholder.visualizer import Visualizer
 from tensorboard.plugins.beholder.shared_config import PLUGIN_NAME, TAG_NAME,\
-  SUMMARY_FILENAME, DEFAULT_CONFIG, INFO_HEIGHT, IMAGE_WIDTH
+  SUMMARY_FILENAME, DEFAULT_CONFIG
 from tensorboard.plugins.beholder import video_writing
 
 default_config = DEFAULT_CONFIG
@@ -34,6 +35,7 @@ class Beholder():
     tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
     with open(self.PLUGIN_LOGDIR + '/config', 'w') as config_file:
       pickle.dump(default_config, config_file)
+
 
   def _update_config(self):
     '''Reads the config file from disk or creates a new one.'''
@@ -64,8 +66,7 @@ class Beholder():
   def _get_final_image(self, config, arrays=None, frame=None):
     if config['values'] == 'frames':
       if frame is None:
-        message = "A frame wasn't passed into the update function."
-        final_image = im_util.text_image(INFO_HEIGHT, IMAGE_WIDTH, message)
+        final_image = np.reshape(range(100*100), (100, 100))
       else:
         frame = frame() if callable(frame) else frame
         final_image = im_util.scale_image_for_display(frame)
@@ -85,13 +86,30 @@ class Beholder():
       return time.time() >= earliest_time
 
 
+  def _update_frame(self, arrays, frame, config):
+    final_image = self._get_final_image(config, arrays, frame)
+    image_height, image_width = final_image.shape
+
+    if self.summary_op is None or self.last_image_height != image_height:
+      self.frame_placeholder = tf.placeholder(tf.uint8, [image_height,
+                                                         image_width])
+      self.summary_op = tf.summary.tensor_summary(TAG_NAME,
+                                                  self.frame_placeholder)
+    self._write_summary(final_image)
+    self.last_image_height = image_height
+
+    return final_image
+
+
   def _update_recording(self, frame, config):
+    '''Adds a frame to the video using ffmpeg if possible. If not, writes
+    individual frames as png files in a directory.
+    '''
     is_recording, fps = config['is_recording'], config['FPS']
     filename = self.PLUGIN_LOGDIR + '/video-{}.mp4'.format(time.time())
 
     if is_recording:
       if self.video_writer is None or frame.shape != self.video_writer.size:
-        print('Beginning recording.')
         try:
           self.video_writer = video_writing.FFMPEG_VideoWriter(filename,
                                                                frame.shape,
@@ -102,7 +120,6 @@ class Beholder():
                                                       frame.shape)
       self.video_writer.write_frame(frame)
     elif not is_recording and self.video_writer is not None:
-      print('Finishing recording.')
       self.video_writer.close()
       self.video_writer = None
 
@@ -126,19 +143,9 @@ class Beholder():
     if self._enough_time_has_passed(config['FPS']):
       self.last_update_time = time.time()
 
-      final_image = self._get_final_image(config, arrays, frame)
-      image_height, image_width = final_image.shape
-
-      if self.summary_op is None or self.last_image_height != image_height:
-        self.frame_placeholder = tf.placeholder(tf.uint8, [image_height,
-                                                           image_width])
-        self.summary_op = tf.summary.tensor_summary(TAG_NAME,
-                                                    self.frame_placeholder)
-      self._write_summary(final_image)
+      final_image = self._update_frame(arrays, frame, config)
       self._update_recording(final_image, config)
 
-
-      self.last_image_height = image_height
 
   ##############################################################################
 
