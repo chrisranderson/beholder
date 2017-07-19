@@ -8,18 +8,17 @@ import tensorflow as tf
 
 from tensorboard.backend.event_processing import plugin_asset_util as pau
 
-from tensorboard.plugins.beholder import im_util
-from tensorboard.plugins.beholder.visualizer import Visualizer
-from tensorboard.plugins.beholder.shared_config import PLUGIN_NAME, TAG_NAME,\
-  SUMMARY_FILENAME, DEFAULT_CONFIG
-from tensorboard.plugins.beholder import video_writing
+import im_util
+from shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
+  DEFAULT_CONFIG, CONFIG_FILENAME, SECTION_INFO_FILENAME
+import video_writing
+from visualizer import Visualizer
 
 default_config = DEFAULT_CONFIG
 
 class Beholder():
 
   def __init__(self, session, logdir):
-    self.visualizer = Visualizer(session)
     self.video_writer = None
 
     self.LOGDIR_ROOT = logdir
@@ -33,14 +32,17 @@ class Beholder():
     self.last_update_time = time.time()
 
     tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
-    with open(self.PLUGIN_LOGDIR + '/config', 'w') as config_file:
+
+    with open('{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME), 'w')\
+      as config_file:
       pickle.dump(default_config, config_file)
 
+    self.visualizer = Visualizer(session, self.PLUGIN_LOGDIR)
 
   def _update_config(self):
     '''Reads the config file from disk or creates a new one.'''
     global default_config
-    filename = self.PLUGIN_LOGDIR + '/config'
+    filename = '{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME)
 
     try:
       with open(filename, 'r') as file:

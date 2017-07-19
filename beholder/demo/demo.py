@@ -32,7 +32,7 @@ import tensorflow as tf
 
 from tensorflow.examples.tutorials.mnist import input_data
 
-from tensorboard.plugins.beholder import beholder
+from beholder import beholder
 Beholder = beholder.Beholder
 
 FLAGS = None

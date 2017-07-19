@@ -15,8 +15,7 @@ from werkzeug import wrappers
 from tensorboard.backend import http_util
 from tensorboard.backend.event_processing import plugin_asset_util as pau
 from tensorboard.plugins import base_plugin
-from tensorboard.plugins.beholder.shared_config import SECTION_HEIGHT, \
-  SUMMARY_FILENAME, IMAGE_WIDTH, TAG_NAME, PLUGIN_NAME
+from beholder.shared_config import *
 
 # TODO: will this cause problems elsewhere? Added because of broken pipe errors.
 # from signal import signal, SIGPIPE, SIG_DFL
@@ -24,6 +23,7 @@ from tensorboard.plugins.beholder.shared_config import SECTION_HEIGHT, \
 
 FRAME_ROUTE = '/beholder-frame'
 CONFIG_ROUTE = '/change-config'
+SECTION_INFO_ROUTE = '/section-info'
 RUN_NAME = 'plugins/{}'.format(PLUGIN_NAME)
 
 
@@ -33,11 +33,10 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
   def __init__(self, context):
     self._MULTIPLEXER = context.multiplexer
-    plugin_logdir = pau.PluginDirectory(context.logdir,
-                                        PLUGIN_NAME)
+    plugin_logdir = pau.PluginDirectory(context.logdir, PLUGIN_NAME)
+    self._INFO_PATH = '{}/{}'.format(plugin_logdir, SECTION_INFO_FILENAME)
     self._SUMMARY_PATH = '{}/{}'.format(plugin_logdir, SUMMARY_FILENAME)
-    self._CONFIG_PATH = '{}/{}'.format(plugin_logdir,
-                                       'config')
+    self._CONFIG_PATH = '{}/{}'.format(plugin_logdir, CONFIG_FILENAME)
     self.most_recent_frame = np.zeros((SECTION_HEIGHT, IMAGE_WIDTH))
     self.served_new = 0
     self.served_old = 0.0001
@@ -47,8 +46,9 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
   def get_plugin_apps(self):
     return {
-        FRAME_ROUTE: self._serve_beholder_frame,
         CONFIG_ROUTE: self._serve_change_config,
+        FRAME_ROUTE: self._serve_beholder_frame,
+        SECTION_INFO_ROUTE: self._serve_section_info,
         '/tags': self._serve_tags
     }
 
@@ -123,10 +123,13 @@ class BeholderPlugin(base_plugin.TBPlugin):
     except IOError:
       print('Could not write config file. Does the logdir exist?')
 
-    return http_util.Respond(request,
-                             {'config': config},
-                             'application/json')
+    return http_util.Respond(request, {'config': config}, 'application/json')
 
+  @wrappers.Request.application
+  def _serve_section_info(self, request):
+    with open(self._INFO_PATH) as file:
+      info = pickle.load(file)
+      return http_util.Respond(request, info, 'application/json')
 
   def _frame_generator(self):
     while True:
@@ -134,7 +137,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
       if self.FPS == 0:
         continue
       else:
-        time.sleep(1/(self.FPS + 1))
+        time.sleep(1/(self.FPS))
 
       array = self._get_image_from_summary()
       image = Image.fromarray(array, mode='L') # L: 8-bit grayscale

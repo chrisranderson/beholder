@@ -2,17 +2,19 @@ from collections import deque
 from math import floor, sqrt
 
 import numpy as np
+import pickle
 import tensorflow as tf
 
-from tensorboard.plugins.beholder import im_util
-from tensorboard.plugins.beholder.shared_config import SECTION_HEIGHT,\
-  IMAGE_WIDTH, DEFAULT_CONFIG
+import im_util
+from shared_config import SECTION_HEIGHT, IMAGE_WIDTH, DEFAULT_CONFIG,\
+  SECTION_INFO_FILENAME, TB_WHITE
 
 MIN_SQUARE_SIZE = 4
 
 class Visualizer():
 
-  def __init__(self, session):
+  def __init__(self, session, logdir):
+    self.logdir = logdir
     self.sections_over_time = deque([], DEFAULT_CONFIG['window_size'])
     self.config = DEFAULT_CONFIG
     self.old_config = DEFAULT_CONFIG
@@ -135,8 +137,16 @@ class Visualizer():
 
 
   def _sections_to_image(self, sections):
-    scaled_sections = im_util.scale_sections(sections, self.config['scaling'])
-    return im_util.resize(np.vstack(scaled_sections).astype(np.uint8),
+    sections = im_util.scale_sections(sections, self.config['scaling'])
+
+    final_stack = [sections[0]]
+    padding = np.ones((20, IMAGE_WIDTH)) * 245
+
+    for section in sections[1:]:
+      final_stack.append(padding)
+      final_stack.append(section)
+
+    return im_util.resize(np.vstack(final_stack).astype(np.uint8),
                           len(sections) * (SECTION_HEIGHT),
                           IMAGE_WIDTH)
 
@@ -155,6 +165,30 @@ class Visualizer():
       self.sections_over_time = deque(self.sections_over_time, window_size)
 
 
+  def _save_section_info(self, arrays, sections):
+    infos = []
+
+    if self.config['values'] == 'trainable_variables':
+      names = [x.name for x in tf.trainable_variables()]
+    else:
+      names = range(len(arrays))
+
+    for array, section, name in zip(arrays, sections, names):
+      info = {}
+
+      info['name']  = name
+      info['shape'] = str(array.shape)
+      info['min']   = '{:.3e}'.format(section.min())
+      info['mean']  = '{:.3e}'.format(section.mean())
+      info['max']   = '{:.3e}'.format(section.max())
+      info['range'] = '{:.3e}'.format(section.max() - section.min())
+
+      infos.append(info)
+
+    with open('{}/{}'.format(self.logdir, SECTION_INFO_FILENAME), 'w') as file:
+      pickle.dump(infos, file)
+
+
   def build_frame(self, arrays):
     self._maybe_clear_deque()
 
@@ -168,7 +202,9 @@ class Visualizer():
         arrays = arrays if isinstance(arrays, list) else [arrays]
 
     sections = self.arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
+    self._save_section_info(arrays, sections)
     final_image = self._sections_to_image(sections)
+
 
     return final_image
 

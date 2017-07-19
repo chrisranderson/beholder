@@ -15,18 +15,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../paper-slider/paper-slider.html">
-<link rel="import" href="../paper-spinner/paper-spinner-lite.html">
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../tf-backend/tf-backend.html">
-<link rel="import" href="../tf-card-heading/tf-card-heading.html">
-<link rel="import" href="../tf-color-scale/tf-color-scale.html">
-<link rel="import" href="../tf-dashboard-common/tensorboard-color.html">
-<link rel="import" href="../tf-imports/d3.html">
-<link rel="import" href="../tf-imports/lodash.html">
 
-<dom-module id="tf-beholder-video">
+<dom-module id="beholder-video">
   <template>
   
     <div id="container">
@@ -36,6 +28,7 @@ limitations under the License.
     <style>
       img {
         image-rendering: pixelated;
+        margin: 20px;
       }
     </style>
   </template>
@@ -49,7 +42,7 @@ limitations under the License.
     const FEED_ROUTE = getRouter().pluginRoute('beholder', '/beholder-frame')
 
     Polymer({
-      is: "tf-beholder-video",
+      is: "beholder-video",
       properties: {
         _requestManager: {
           type: Object,
@@ -67,7 +60,7 @@ limitations under the License.
         this.$.container.appendChild(newImage)
         newImage.src = FEED_ROUTE + '?t=' + new Date().getTime()
         newImage.id = 'video'
-        newImage.className = 'style-scope tf-beholder-video'
+        newImage.className = 'style-scope beholder-video'
 
         this.$.container.removeChild(this.$.video)
         this.$.video = newImage

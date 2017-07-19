@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 np.set_printoptions(linewidth=99999)
 
-font_path = "tensorboard/plugins/beholder/resources/roboto-mono.ttf"
+font_path = "beholder/resources/roboto-mono.ttf"
 FONT = ImageFont.truetype(font_path, 12)
 
 def resize(nparray, height, width):
@@ -22,7 +22,6 @@ def scale_sections(sections, scaling_scope):
   input: unscaled sections.
   returns: sections scaled to [0, 255]
   '''
-
   new_sections = []
 
   if scaling_scope == 'layer':
@@ -37,13 +36,6 @@ def scale_sections(sections, scaling_scope):
                                                   global_min,
                                                   global_max))
   return new_sections
-
-
-def text_image(height, width, text):
-  image = Image.new('L', (width, height), (245))
-  draw = ImageDraw.Draw(image)
-  draw.text((7, 17), text, font=FONT)
-  return np.array(image).astype(np.uint8)
 
 
 def scale_image_for_display(image, minimum=None, maximum=None):

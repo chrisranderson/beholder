@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from tensorboard.plugins.beholder import im_util
-from tensorboard.plugins.beholder.shared_config import SECTION_HEIGHT,\
+from beholder import im_util
+from beholder.shared_config import SECTION_HEIGHT,\
   IMAGE_WIDTH
 
 class ImUtilTest(tf.test.TestCase):

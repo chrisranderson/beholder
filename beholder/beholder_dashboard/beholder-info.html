@@ -1,0 +1,93 @@
+<!--
+@license
+Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../tf-backend/tf-backend.html">
+
+<dom-module id="beholder-info">
+  <template>
+    
+    Repeat below this.
+    <template id="repeater" dom-is="dom-repeat" items="{{items}}">
+      {{item}}
+<!--       <div class="section-info">
+        <ul>
+          <li>name: [[item.name]]</li>
+          <li>shape: [[item.shape]]</li>
+          <li>min: [[item.min]]</li>
+          <li>mean: [[item.mean]]</li>
+          <li>max: [[item.max]]</li>
+          <li>range: [[item.range]]</li>
+        </ul>
+      </div> -->
+    </template>
+    Repeat above this.
+    
+    <style>
+    </style>
+  </template>
+
+  <script>
+    "use strict";
+
+    import {RequestManager} from '../tf-backend/requestManager.js';
+    import {getRouter} from '../tf-backend/router.js';
+
+    const INFO_ROUTE = getRouter().pluginRoute('beholder', '/section-info')
+
+    Polymer({
+      is: "beholder-info",
+      properties: {
+        _requestManager: {
+          type: Object,
+          value: () => new RequestManager(),
+        },
+
+        items: {
+          type: Array,
+          value: [
+                  {
+                    name:'test',
+                    shape: 'sadf',
+                    }],
+        },
+      },
+
+      _reloaditems() {
+        let fps = this.fps === 0 ? 1 : this.fps
+
+        console.log(this.items)
+
+        window.setTimeout(function(){
+          this._requestManager.request(INFO_ROUTE).then(function(response){
+            this.splice('items', 0)
+
+            for (var item of response) {
+             this.push('items', item)
+            }
+          }.bind(this))
+
+          this._reloaditems()
+        }.bind(this), 1000/fps)
+      },
+
+      ready() {
+        this._reloaditems()
+      }
+    });
+  </script>
+</dom-module>

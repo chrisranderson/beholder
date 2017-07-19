@@ -43,7 +43,8 @@ from tensorboard.plugins.profile import profile_plugin
 from tensorboard.plugins.projector import projector_plugin
 from tensorboard.plugins.scalar import scalars_plugin
 from tensorboard.plugins.text import text_plugin
-from tensorboard.plugins.beholder import beholder_plugin
+
+from beholder import beholder_plugin
 
 # TensorBoard flags
 
@@ -236,6 +237,7 @@ def main(unused_argv=None):
         profile_plugin.ProfilePlugin,
         beholder_plugin.BeholderPlugin
     ]
+    print('plugins', plugins)
     tb = create_tb_app(plugins)
     run_simple_server(tb)
 
