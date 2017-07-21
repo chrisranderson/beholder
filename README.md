@@ -2,35 +2,37 @@
 
 ![beholder demo video](https://raw.githubusercontent.com/chrisranderson/beholder/master/demo.gif)
 
-Beholder is a TensorBoard plugin for visualizing frames of a video while your model trains. 
+Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbtirary tensors, or view frames that you've created.
 
-## Installation
-As TensorBoard's (in progress) third party plugin system currently functions, you need to build TensorBoard from scratch to use this plugin.
+As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin.
 
+## Build and run TensorBoard
 1. [Install Bazel](https://docs.bazel.build/versions/master/install.html)
-2. `pip install pillow`
-3. `git clone https://github.com/chrisranderson/beholder.git`
+2. `git clone https://github.com/chrisranderson/beholder.git`
+3. `cd beholder`
+4. `bazel build beholder/tensorboard_x`: this will take a while.
+5. `./bazel-bin/beholder/tensorboard_x/tensorboard_x --logdir=/tmp/beholder-demo`
 
-## Starting the Beholder version of TensorBoard
-1. `cd beholder && bazel build beholder/tensorboard_x`: this will take a while.
-2. `./bazel-bin/beholder/tensorboard_x/tensorboard_x --logdir=/tmp/beholder-demo`
+## Run the demo
+`bazel build beholder/demos/demo && ./bazel-bin/beholder/demos/demo/demo`
 
-## Running the demo
-Run `bazel build beholder/demos/demo && ./bazel-bin/beholder/demos/demo/demo`
+## Use Beholder in your own scripts
+From the root of the repository: `pip install .`. Before you begin training, create an instance of a Beholder:
 
-## Usage in your own scripts
-
-Before you begin training, initialize:
-
+    from beholder.beholder import Beholder
     visualizer = Beholder(session=sess,
                           logdir=LOG_DIRECTORY)
 
-In your train loop, add:
+In your train loop, add (to visualize `tf.trainable_variables()`:
 
-    visualizer.update()
+    visualizer.update() # equivalent to visualizer.update(arrays=sess.run(tf.trainable_variables()))
 
-It allows you to visualize the parameters of your network and the variance of those parameters over time. You can also pass in a list of numpy arrays to `update()` (for example, gradient values returned from `sess.run([train_step, gradients])`.
+To visualize arbitrary tensors:
 
-Beholder just barely began development, and **it isn't currently in a state where it can easily be used by other people**. It will be, soon after the TensorBoard team makes some changes (see https://github.com/chrisranderson/beholder/issues/4).
+    evaluated_tensors = session.run([var1, var2, var3])
+    visualizer.update(arrays=evaluated_tensors)
 
-Beholder will be in a very good state by August 16th. If you'd like to use it before then, post an issue and I'll help you out.
+To watch frames that are already built:
+
+    example_frame = np.random.randint(1, 255, (100, 100))
+    visualizer.update(frame=example_frame)
