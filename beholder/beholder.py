@@ -6,8 +6,6 @@ import time
 import numpy as np
 import tensorflow as tf
 
-from tensorboard.backend.event_processing import plugin_asset_util as pau
-
 import im_util
 from shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
   DEFAULT_CONFIG, CONFIG_FILENAME
@@ -22,7 +20,8 @@ class Beholder():
     self.video_writer = None
 
     self.LOGDIR_ROOT = logdir
-    self.PLUGIN_LOGDIR = pau.PluginDirectory(logdir, PLUGIN_NAME)
+    # self.PLUGIN_LOGDIR = pau.PluginDirectory(logdir, PLUGIN_NAME)
+    self.PLUGIN_LOGDIR = logdir + '/plugins/beholder'
     self.SESSION = session
 
     self.frame_placeholder = None

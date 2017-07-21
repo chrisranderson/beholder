@@ -9,13 +9,16 @@ As TensorBoard's (in progress) third party plugin system currently functions, yo
 
 1. [Install Bazel](https://docs.bazel.build/versions/master/install.html)
 2. `pip install pillow`
-3. `git clone https://github.com/tensorflow/tensorboard.git`
-4. `cd tensorboard/tensorboard/plugins && git clone https://github.com/chrisranderson/beholder.git`
-6. `cd beholder && bazel build demo && bazel run -- tensorboard --logdir="/tmp/beholder-demo`
-7. 
+3. `git clone https://github.com/chrisranderson/beholder.git`
 
+## Starting the Beholder version of TensorBoard
+1. `cd beholder && bazel build beholder/tensorboard_x`: this will take a while.
+2. `./bazel-bin/beholder/tensorboard_x/tensorboard_x --logdir=/tmp/beholder-demo`
 
-## Usage
+## Running the demo
+Run `bazel build beholder/demos/demo && ./bazel-bin/beholder/demos/demo/demo`
+
+## Usage in your own scripts
 
 Before you begin training, initialize:
 
