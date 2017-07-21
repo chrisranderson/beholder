@@ -54,7 +54,9 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
 
   def is_active(self):
-    return tf.gfile.Exists(self._SUMMARY_PATH)
+    # TODO: bad idea :)
+    return True
+    # return tf.gfile.Exists(self._SUMMARY_PATH)
 
 
   def _get_image_from_summary(self):

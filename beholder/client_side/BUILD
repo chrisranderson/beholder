@@ -1,15 +1,15 @@
+package(default_visibility = ["//visibility:public"])
+
 load("@org_tensorflow_tensorboard//tensorboard/defs:web.bzl", "ts_web_library")
 
-licenses(["notice"])  # Apache 2.0
-
 ts_web_library(
-    name = "beholder_dashboard",
+    name = "component",
     srcs = [
-        "beholder-dashboard.html",
+        "beholder.html",
         "beholder-video.html",
         "beholder-info.html",
     ],
-    path = "/beholder-dashboard",
+    path = "/beholder",
     deps = [
         "@org_tensorflow_tensorboard//tensorboard/components/tf_backend",
         "@org_tensorflow_tensorboard//tensorboard/components/tf_card_heading",
@@ -33,9 +33,9 @@ ts_web_library(
 ts_web_library(
     name = "demo",
     srcs = ["index.html"] + glob(["data/**"]),
-    path = "/tf-beholder-dashboard",
+    path = "/beholder-dashboard",
     deps = [
-        ":beholder-dashboard",
+        "//dashboard",
         "@org_tensorflow_tensorboard//tensorboard/components/tf_backend",
         "@org_tensorflow_tensorboard//tensorboard/components/tf_imports:webcomponentsjs",
         "@org_polymer_iron_demo_helpers",

@@ -90,11 +90,11 @@ web_test_repositories(
 
 http_archive(
     name = "org_tensorflow_tensorboard",
-    sha256 = "0c70b3356f6600c06f2930a74d01642b9fd9688187d27b374b3da60833800008",
-    strip_prefix = "tensorboard-ca813e6a0083896463e587779db96ad2aa545b2e",
+    sha256 = "1f744f31b0ff90456fbf05c2e0bb3d156b632b16ecbb7d0c03b1e7ba5edc1b60",
+    strip_prefix = "tensorboard-da8db355b64a0954342a0af56fe6eaad2542a203",
     urls = [
-        "http://mirror.bazel.build/github.com/jart/tensorboard/archive/ca813e6a0083896463e587779db96ad2aa545b2e.tar.gz",
-        "https://github.com/jart/tensorboard/archive/ca813e6a0083896463e587779db96ad2aa545b2e.tar.gz",  # 2017-07-18
+        "http://mirror.bazel.build/github.com/tensorflow/tensorboard/archive/da8db355b64a0954342a0af56fe6eaad2542a203.tar.gz",
+        "https://github.com/tensorflow/tensorboard/archive/da8db355b64a0954342a0af56fe6eaad2542a203.tar.gz",  # 2017-07-19
     ],
 )
 

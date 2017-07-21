@@ -39,21 +39,3 @@ py_library(
     "@org_tensorflow_tensorboard//tensorboard/backend/event_processing:plugin_asset_util",
   ],
 )
-
-
-py_library(
-  name = "beholder_plugin",
-  srcs = [
-    "beholder_plugin.py",
-    "shared_config.py"
-  ],
-  srcs_version = "PY2AND3",
-  deps = [
-    ":beholder",
-    ":im_util",
-    "@org_tensorflow_tensorboard//tensorboard/backend:http_util",
-    "@org_tensorflow_tensorboard//tensorboard/backend/event_processing:plugin_asset_util",
-    "@org_tensorflow_tensorboard//tensorboard/backend/event_processing:event_accumulator",
-    "@org_tensorflow_tensorboard//tensorboard/plugins:base_plugin",
-  ],
-)

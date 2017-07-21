@@ -7,13 +7,14 @@ licenses(["notice"])  # Apache 2.0
 py_binary(
     name = "tensorboard_x",
     srcs = ["main.py"],
+    data = ["assets.zip"],
     main = "main.py",
     srcs_version = "PY2AND3",
     deps = [
+        "//beholder/server_side:beholder_plugin",
+        "@org_pocoo_werkzeug",
+        "@org_tensorflow_tensorboard//tensorboard",
         "@org_tensorflow_tensorboard//tensorboard:util",
-        "@org_tensorflow_tensorboard//tensorboard:version",
-        "@org_tensorflow_tensorboard//tensorboard/backend:application",
-        "@org_tensorflow_tensorboard//tensorboard/backend/event_processing:event_file_inspector",
         "@org_tensorflow_tensorboard//tensorboard/plugins/audio:audio_plugin",
         "@org_tensorflow_tensorboard//tensorboard/plugins/core:core_plugin",
         "@org_tensorflow_tensorboard//tensorboard/plugins/distribution:distributions_plugin",
@@ -24,8 +25,6 @@ py_binary(
         "@org_tensorflow_tensorboard//tensorboard/plugins/projector:projector_plugin",
         "@org_tensorflow_tensorboard//tensorboard/plugins/scalar:scalars_plugin",
         "@org_tensorflow_tensorboard//tensorboard/plugins/text:text_plugin",
-        "@org_pocoo_werkzeug//:werkzeug",
-        "//beholder:beholder_plugin",
     ],
 )
 
@@ -34,7 +33,7 @@ ts_web_library(
     srcs = ["index.html"],
     path = "/",
     deps = [
-        "//beholder/beholder_dashboard",
+        "//beholder/client_side:component",
         "@org_tensorflow_tensorboard//tensorboard/components/tf_imports:webcomponentsjs",
         "@org_tensorflow_tensorboard//tensorboard/components/tf_tensorboard",
         "@org_tensorflow_tensorboard//tensorboard/plugins/audio/tf_audio_dashboard",
