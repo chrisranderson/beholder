@@ -10,7 +10,7 @@ from tensorboard.backend.event_processing import plugin_asset_util as pau
 
 import im_util
 from shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
-  DEFAULT_CONFIG, CONFIG_FILENAME, SECTION_INFO_FILENAME
+  DEFAULT_CONFIG, CONFIG_FILENAME
 import video_writing
 from visualizer import Visualizer
 

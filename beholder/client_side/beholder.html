@@ -153,19 +153,16 @@ limitations under the License.
           </div>
         </template> -->
         <!-- <template is="dom-if" if="[[!_dataNotFound]]"> -->
-        <div>
           <!-- Why can't I display more than one? -->
           <beholder-video id="video"> </beholder-video>
           <beholder-info id="info" fps="[[_FPS]]"> </beholder-info>
-        </div>
-
-
       </div>
     </tf-dashboard-layout>
     <style include="dashboard-style"></style>
     <style>
       .center {
         height: 100%;
+        display: flex;
       }
       .no-data-warning {
         max-width: 540px;

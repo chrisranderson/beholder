@@ -1,13 +1,13 @@
 from collections import deque
 from math import floor, sqrt
+import pickle
 
 import numpy as np
-import pickle
 import tensorflow as tf
 
 import im_util
 from shared_config import SECTION_HEIGHT, IMAGE_WIDTH, DEFAULT_CONFIG,\
-  SECTION_INFO_FILENAME, TB_WHITE
+  SECTION_INFO_FILENAME
 
 MIN_SQUARE_SIZE = 4
 
@@ -137,17 +137,22 @@ class Visualizer():
 
 
   def _sections_to_image(self, sections):
+    padding_size = 20
+
     sections = im_util.scale_sections(sections, self.config['scaling'])
 
     final_stack = [sections[0]]
-    padding = np.ones((20, IMAGE_WIDTH)) * 245
+    padding = np.ones((padding_size, IMAGE_WIDTH)) * 245
 
     for section in sections[1:]:
       final_stack.append(padding)
       final_stack.append(section)
 
+    image_height = len(sections) * SECTION_HEIGHT +\
+                   (padding_size * (len(sections) - 1))
+
     return im_util.resize(np.vstack(final_stack).astype(np.uint8),
-                          len(sections) * (SECTION_HEIGHT),
+                          image_height,
                           IMAGE_WIDTH)
 
 
@@ -176,11 +181,11 @@ class Visualizer():
     for array, section, name in zip(arrays, sections, names):
       info = {}
 
-      info['name']  = name
+      info['name'] = name
       info['shape'] = str(array.shape)
-      info['min']   = '{:.3e}'.format(section.min())
-      info['mean']  = '{:.3e}'.format(section.mean())
-      info['max']   = '{:.3e}'.format(section.max())
+      info['min'] = '{:.3e}'.format(section.min())
+      info['mean'] = '{:.3e}'.format(section.mean())
+      info['max'] = '{:.3e}'.format(section.max())
       info['range'] = '{:.3e}'.format(section.max() - section.min())
 
       infos.append(info)

@@ -1,12 +1,7 @@
 from __future__ import division, print_function
 
-
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
-np.set_printoptions(linewidth=99999)
-
-font_path = "beholder/resources/roboto-mono.ttf"
-FONT = ImageFont.truetype(font_path, 12)
+from PIL import Image
 
 def resize(nparray, height, width):
   image = Image.fromarray(nparray)

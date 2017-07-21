@@ -129,9 +129,13 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
   @wrappers.Request.application
   def _serve_section_info(self, request):
-    with open(self._INFO_PATH) as file:
-      info = pickle.load(file)
-      return http_util.Respond(request, info, 'application/json')
+    try:
+      with open(self._INFO_PATH) as file:
+        info = pickle.load(file)
+    except IOError:
+      info = []
+
+    return http_util.Respond(request, info, 'application/json')
 
   def _frame_generator(self):
     while True:

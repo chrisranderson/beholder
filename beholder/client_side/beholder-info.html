@@ -20,24 +20,26 @@ limitations under the License.
 
 <dom-module id="beholder-info">
   <template>
-    
-    Repeat below this.
-    <template id="repeater" dom-is="dom-repeat" items="{{items}}">
-      {{item}}
-<!--       <div class="section-info">
+    <template id="repeater" is="dom-repeat" items="{{items}}">
+      <div class="section-info">
         <ul>
-          <li>name: [[item.name]]</li>
+          <li>[[item.name]]</li>
           <li>shape: [[item.shape]]</li>
           <li>min: [[item.min]]</li>
           <li>mean: [[item.mean]]</li>
           <li>max: [[item.max]]</li>
           <li>range: [[item.range]]</li>
         </ul>
-      </div> -->
+      </div>
     </template>
-    Repeat above this.
-    
     <style>
+    .section-info {
+      height: 128px;
+      margin: 0 0 20px 0;
+    }
+    .section-info ul {
+      list-style-type: none;
+    }
     </style>
   </template>
 
