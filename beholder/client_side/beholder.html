@@ -55,7 +55,7 @@ limitations under the License.
         </div>
 
         <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
-          
+
           <div class="sidebar-section">
             <div class="title">Mode</div>
             <paper-radio-group id="modeSelector" selected="{{_mode}}">
@@ -155,7 +155,12 @@ limitations under the License.
         <!-- <template is="dom-if" if="[[!_dataNotFound]]"> -->
           <!-- Why can't I display more than one? -->
           <beholder-video id="video"> </beholder-video>
-          <beholder-info id="info" fps="[[_FPS]]"> </beholder-info>
+        <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
+          <beholder-info
+            id="info"
+            fps="[[_FPS]]">
+          </beholder-info>
+        </template>
       </div>
     </tf-dashboard-layout>
     <style include="dashboard-style"></style>
@@ -192,7 +197,7 @@ limitations under the License.
       pre {
         display: inline;
       }
-      
+
       paper-button#record_button {
         color: #D32F2F;
       }
@@ -369,7 +374,7 @@ limitations under the License.
           this.set('_recordText', 'start recording')
           this.set('_isRecording', false)
         }
-        
+
         this.$.record_button.classList.toggle('is-recording')
       },
     });

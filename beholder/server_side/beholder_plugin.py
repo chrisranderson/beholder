@@ -132,7 +132,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
     try:
       with open(self._INFO_PATH) as file:
         info = pickle.load(file)
-    except IOError:
+    except (IOError, EOFError):
       info = []
 
     return http_util.Respond(request, info, 'application/json')
