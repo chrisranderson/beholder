@@ -61,18 +61,12 @@ limitations under the License.
 
         items: {
           type: Array,
-          value: [
-                  {
-                    name:'test',
-                    shape: 'sadf',
-                    }],
+          value: [{name:'Loading...'}],
         },
       },
 
       _reloaditems() {
         let fps = this.fps === 0 ? 1 : this.fps
-
-        console.log(this.items)
 
         window.setTimeout(function(){
           this._requestManager.request(INFO_ROUTE).then(function(response){

@@ -2,22 +2,23 @@
 
 ![beholder demo video](https://raw.githubusercontent.com/chrisranderson/beholder/master/demo.gif)
 
-Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbtirary tensors, or view frames that you've created.
+Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbtirary tensors, or view frames that you've already created.
 
 As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin.
 
 ## Build and run TensorBoard
 1. [Install Bazel](https://docs.bazel.build/versions/master/install.html)
-2. `git clone https://github.com/chrisranderson/beholder.git`
+2. Clone the repo: `git clone https://github.com/chrisranderson/beholder.git`
 3. `cd beholder`
-4. `bazel build beholder/tensorboard_x`: this will take a while.
-5. `./bazel-bin/beholder/tensorboard_x/tensorboard_x --logdir=/tmp/beholder-demo`
+4. Install Beholder: `pip install .`
+4. Build TensorBoard (this will take a while): `bazel build beholder/tensorboard_x`
+5. Run the newly built TensorBoard: `./bazel-bin/beholder/tensorboard_x/tensorboard_x --logdir=/tmp/beholder-demo`
 
 ## Run the demo
 `bazel build beholder/demos/demo && ./bazel-bin/beholder/demos/demo/demo`
 
 ## Use Beholder in your own scripts
-From the root of the repository: `pip install .`. Before you begin training, create an instance of a Beholder:
+Before you begin training, create an instance of a Beholder:
 
     from beholder.beholder import Beholder
     visualizer = Beholder(session=sess,

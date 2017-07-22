@@ -29,16 +29,3 @@ ts_web_library(
         "@org_polymer_paper_tooltip",
     ],
 )
-
-ts_web_library(
-    name = "demo",
-    srcs = ["index.html"] + glob(["data/**"]),
-    path = "/beholder-dashboard",
-    deps = [
-        "//dashboard",
-        "@org_tensorflow_tensorboard//tensorboard/components/tf_backend",
-        "@org_tensorflow_tensorboard//tensorboard/components/tf_imports:webcomponentsjs",
-        "@org_polymer_iron_demo_helpers",
-        "@org_polymer_paper_styles",
-    ],
-)

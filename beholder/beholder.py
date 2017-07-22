@@ -20,7 +20,6 @@ class Beholder():
     self.video_writer = None
 
     self.LOGDIR_ROOT = logdir
-    # self.PLUGIN_LOGDIR = pau.PluginDirectory(logdir, PLUGIN_NAME)
     self.PLUGIN_LOGDIR = logdir + '/plugins/beholder'
     self.SESSION = session
 
