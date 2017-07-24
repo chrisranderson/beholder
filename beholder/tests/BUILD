@@ -1,4 +1,3 @@
-
 py_test(
   name = "visualizer_test",
   srcs = [

@@ -33,7 +33,7 @@ ts_web_library(
     srcs = ["index.html"],
     path = "/",
     deps = [
-        "//beholder/client_side:component",
+        "//beholder/client_side:dashboard",
         "@org_tensorflow_tensorboard//tensorboard/components/tf_imports:webcomponentsjs",
         "@org_tensorflow_tensorboard//tensorboard/components/tf_tensorboard",
         "@org_tensorflow_tensorboard//tensorboard/plugins/audio/tf_audio_dashboard",

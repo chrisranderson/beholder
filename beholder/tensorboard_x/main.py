@@ -46,7 +46,7 @@ def main(unused_argv=None):
   tb_app = tb_main.create_tb_app(
       assets_zip_provider=get_assets_zip_provider(),
       plugins=[
-               
+
           beholder_plugin.BeholderPlugin,
 
           core_plugin.CorePlugin,

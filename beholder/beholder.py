@@ -17,7 +17,6 @@ class Beholder():
   def __init__(self, session, logdir):
     self.video_writer = None
 
-    self.LOGDIR_ROOT = logdir
     self.PLUGIN_LOGDIR = logdir + '/plugins/' + PLUGIN_NAME
     self.SESSION = session
 
@@ -29,13 +28,12 @@ class Beholder():
     self.previous_config = DEFAULT_CONFIG
 
     tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
-
     write_pickle(DEFAULT_CONFIG, '{}/{}'.format(self.PLUGIN_LOGDIR,
                                                 CONFIG_FILENAME))
     self.visualizer = Visualizer(session, self.PLUGIN_LOGDIR)
 
 
-  def _update_config(self):
+  def _get_config(self):
     '''Reads the config file from disk or creates a new one.'''
     filename = '{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME)
     config = read_pickle(filename, default=self.previous_config)
@@ -126,7 +124,7 @@ class Beholder():
              frame can also be a function, which only is evaluated when the
              "frame" option is selected by the client.
     '''
-    config = self._update_config()
+    config = self._get_config()
     self.visualizer.update(config)
 
     if self._enough_time_has_passed(config['FPS']):

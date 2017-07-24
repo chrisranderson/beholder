@@ -18,15 +18,6 @@ from beholder.shared_config import PLUGIN_NAME, SECTION_HEIGHT, IMAGE_WIDTH,\
 from beholder.file_system_tools import read_tensor_summary, read_pickle,\
   write_pickle
 
-# TODO: will this cause problems elsewhere? Added because of broken pipe errors.
-# from signal import signal, SIGPIPE, SIG_DFL
-# signal(SIGPIPE, signal_handler)
-
-FRAME_ROUTE = '/beholder-frame'
-CONFIG_ROUTE = '/change-config'
-SECTION_INFO_ROUTE = '/section-info'
-RUN_NAME = 'plugins/{}'.format(PLUGIN_NAME)
-
 
 class BeholderPlugin(base_plugin.TBPlugin):
 
@@ -34,38 +25,32 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
   def __init__(self, context):
     self._MULTIPLEXER = context.multiplexer
-    plugin_logdir = pau.PluginDirectory(context.logdir, PLUGIN_NAME)
-    self._INFO_PATH = '{}/{}'.format(plugin_logdir, SECTION_INFO_FILENAME)
-    self._SUMMARY_PATH = '{}/{}'.format(plugin_logdir, SUMMARY_FILENAME)
-    self._CONFIG_PATH = '{}/{}'.format(plugin_logdir, CONFIG_FILENAME)
-    self.most_recent_frame = np.zeros((SECTION_HEIGHT, IMAGE_WIDTH))
-
+    self.PLUGIN_LOGDIR = pau.PluginDirectory(context.logdir, PLUGIN_NAME)
     self.FPS = 10
+    self.most_recent_frame = np.zeros((SECTION_HEIGHT, IMAGE_WIDTH))
 
 
   def get_plugin_apps(self):
     return {
-        CONFIG_ROUTE: self._serve_change_config,
-        FRAME_ROUTE: self._serve_beholder_frame,
-        SECTION_INFO_ROUTE: self._serve_section_info,
+        '/change-config': self._serve_change_config,
+        '/beholder-frame': self._serve_beholder_frame,
+        '/section-info': self._serve_section_info,
         '/tags': self._serve_tags
     }
 
 
   def is_active(self):
-    # TODO: bad idea :)
     return True
-    # return tf.gfile.Exists(self._SUMMARY_PATH)
 
 
-  def _get_image_from_summary(self):
+  def _fetch_current_frame(self):
+    path = '{}/{}'.format(self.PLUGIN_LOGDIR, SUMMARY_FILENAME)
+
     try:
-      frame = read_tensor_summary(self._SUMMARY_PATH).astype(np.uint8)
+      frame = read_tensor_summary(path).astype(np.uint8)
       self.most_recent_frame = frame
       return frame
 
-    # The message didn't decode properly - maybe halfway written at read time?
-    # The message wasn't there - for instance, when a run restarted.
     except (message.DecodeError, IOError):
       return self.most_recent_frame
 
@@ -73,7 +58,9 @@ class BeholderPlugin(base_plugin.TBPlugin):
   @wrappers.Request.application
   def _serve_tags(self, request):
     if self.is_active:
-      runs_and_tags = {RUN_NAME: {'tensors': [TAG_NAME]}}
+      runs_and_tags = {
+          'plugins/{}'.format(PLUGIN_NAME): {'tensors': [TAG_NAME]}
+      }
     else:
       runs_and_tags = {}
 
@@ -100,26 +87,28 @@ class BeholderPlugin(base_plugin.TBPlugin):
     self.FPS = config['FPS']
 
     try:
-      write_pickle(config, self._CONFIG_PATH)
+      write_pickle(config, '{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME))
     except IOError:
       print('Could not write config file. Does the logdir exist?')
 
     return http_util.Respond(request, {'config': config}, 'application/json')
 
+
   @wrappers.Request.application
   def _serve_section_info(self, request):
-    info = read_pickle(self._INFO_PATH, default=[])
+    path = '{}/{}'.format(self.PLUGIN_LOGDIR, SECTION_INFO_FILENAME)
+    info = read_pickle(path, default=[])
     return http_util.Respond(request, info, 'application/json')
+
 
   def _frame_generator(self):
     while True:
-      # TODO: review
       if self.FPS == 0:
         continue
       else:
         time.sleep(1/(self.FPS))
 
-      array = self._get_image_from_summary()
+      array = self._fetch_current_frame()
       image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
       bytes_buffer = io.BytesIO()
       image.save(bytes_buffer, 'PNG')

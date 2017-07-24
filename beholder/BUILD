@@ -2,9 +2,7 @@
 # TensorBoard plugin for tensors and tensor variance for an entire graph.
 
 package(default_visibility = ["//visibility:public"])
-
 licenses(["notice"])  # Apache 2.0
-
 exports_files(["LICENSE"])
 
 py_library(

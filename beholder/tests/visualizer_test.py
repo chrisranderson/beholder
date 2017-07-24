@@ -10,7 +10,8 @@ class VisualizerTest(tf.test.TestCase):
   def setUp(self):
     session = tf.Session()
     visualizer.MIN_SQUARE_SIZE = 1
-    self.visualizer = visualizer.Visualizer(session, '/tmp/beholder-demo/plugins/beholder/')
+    path = '/tmp/beholder-demo/plugins/beholder/'
+    self.visualizer = visualizer.Visualizer(session, path)
     self.visualizer.config['mode'] = 'current'
 
 
@@ -23,7 +24,9 @@ class VisualizerTest(tf.test.TestCase):
           for out_channel in range(1, max_size):
             shape = [height, width, in_channel, out_channel]
             array = np.reshape(range(np.prod(shape)), shape)
-            reshaped = self.visualizer._conv_section(array, SECTION_HEIGHT, IMAGE_WIDTH)
+            reshaped = self.visualizer._conv_section(array,
+                                                     SECTION_HEIGHT,
+                                                     IMAGE_WIDTH)
 
             for in_number in range(in_channel):
               for out_number in range(out_channel):
@@ -45,8 +48,8 @@ class VisualizerTest(tf.test.TestCase):
 
   def test_sections_to_variance_sections(self):
     sections_over_time = [
-      [[[1.0, 2.0, 3.0]]],
-      [[[0.0, 2.0, 4.0]]]
+        [[[1.0, 2.0, 3.0]]],
+        [[[0.0, 2.0, 4.0]]]
     ]
 
     sec = self.visualizer._sections_to_variance_sections(sections_over_time)[0]
@@ -57,7 +60,7 @@ class VisualizerTest(tf.test.TestCase):
 
   def test_sections_to_image(self):
     image = self.visualizer._sections_to_image([
-      np.random.random((10, 10))
+        np.random.random((10, 10))
     ])
 
     self.assertEqual(image.min(), 0)
