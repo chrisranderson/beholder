@@ -4,8 +4,9 @@ import numpy as np
 from PIL import Image
 
 def resize(nparray, height, width):
-  image = Image.fromarray(nparray)
-  return np.array(image.resize((width, height), Image.NEAREST))
+  image = Image.fromarray(nparray.astype(float))
+  resized = np.array(image.resize((width, height), Image.NEAREST))
+  return np.array(resized)
 
 
 def global_extrema(arrays):

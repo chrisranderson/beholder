@@ -21,7 +21,7 @@ class Visualizer():
     self.SESSION = session
 
 
-  def conv_section(self, array, section_height, image_width):
+  def _conv_section(self, array, section_height, image_width):
     '''Reshape a rank 4 array to be rank 2, where each column of block_width is
     a filter, and each row of block height is an input channel. For example:
 
@@ -81,7 +81,7 @@ class Visualizer():
     return np.vstack(rows)
 
 
-  def arrays_to_sections(self, arrays, section_height, image_width):
+  def _arrays_to_sections(self, arrays, section_height, image_width):
     '''
     input: unprocessed numpy arrays.
     returns: columns of the size that they will appear in the image, not scaled
@@ -92,7 +92,7 @@ class Visualizer():
 
     for array in arrays:
       if len(array.shape) == 4:
-        section = self.conv_section(array, section_height, image_width)
+        section = self._conv_section(array, section_height, image_width)
       else:
         flattened_array = np.ravel(array)[:int(section_area / MIN_SQUARE_SIZE)]
         cell_count = np.prod(flattened_array.shape)
@@ -115,12 +115,12 @@ class Visualizer():
     self.sections_over_time.append(sections)
 
     if self.config['mode'] == 'variance':
-      sections = self._sections_to_variance_sections()
+      sections = self._sections_to_variance_sections(self.sections_over_time)
 
     return sections
 
 
-  def _sections_to_variance_sections(self):
+  def _sections_to_variance_sections(self, sections_over_time):
     '''Computes the variance of corresponding sections over time.
 
     Returns:
@@ -128,8 +128,8 @@ class Visualizer():
     '''
     variance_sections = []
 
-    for i in range(len(self.sections_over_time[0])):
-      time_sections = [sections[i] for sections in self.sections_over_time]
+    for i in range(len(sections_over_time[0])):
+      time_sections = [sections[i] for sections in sections_over_time]
       variance = np.var(time_sections, axis=0)
       variance_sections.append(variance)
 
@@ -206,7 +206,7 @@ class Visualizer():
       else:
         arrays = arrays if isinstance(arrays, list) else [arrays]
 
-    sections = self.arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
+    sections = self._arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
     self._save_section_info(arrays, sections)
     final_image = self._sections_to_image(sections)
 

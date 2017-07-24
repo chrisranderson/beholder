@@ -13,15 +13,6 @@ py_library(
   srcs = ["im_util.py"],
 )
 
-py_test(
-  name = "im_util_test",
-  srcs = ["im_util_test.py", "shared_config.py"],
-  srcs_version = "PY2AND3",
-  deps = [
-    ":im_util"
-  ]
-)
-
 py_library(
   name = "visualizer",
   srcs = ["visualizer.py", "shared_config.py"],
