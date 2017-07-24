@@ -22,11 +22,17 @@ py_library(
 )
 
 py_library(
+  name = "file_system_tools",
+  srcs = ["file_system_tools.py"],
+)
+
+py_library(
   name = "beholder",
   srcs = ["beholder.py", "shared_config.py", "video_writing.py"],
   deps = [
     ":im_util",
     ":visualizer",
+    ":file_system_tools",
     "@org_tensorflow_tensorboard//tensorboard/backend/event_processing:plugin_asset_util",
   ],
 )

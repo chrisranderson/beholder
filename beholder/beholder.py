@@ -1,18 +1,16 @@
 from __future__ import division, print_function
 
-import pickle
 import time
 
 import numpy as np
 import tensorflow as tf
 
+from file_system_tools import read_pickle, write_pickle, write_file
 import im_util
 from shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
   DEFAULT_CONFIG, CONFIG_FILENAME
 import video_writing
 from visualizer import Visualizer
-
-default_config = DEFAULT_CONFIG
 
 class Beholder():
 
@@ -20,7 +18,7 @@ class Beholder():
     self.video_writer = None
 
     self.LOGDIR_ROOT = logdir
-    self.PLUGIN_LOGDIR = logdir + '/plugins/beholder'
+    self.PLUGIN_LOGDIR = logdir + '/plugins/' + PLUGIN_NAME
     self.SESSION = session
 
     self.frame_placeholder = None
@@ -28,27 +26,20 @@ class Beholder():
 
     self.last_image_height = 0
     self.last_update_time = time.time()
+    self.previous_config = DEFAULT_CONFIG
 
     tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
 
-    with open('{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME), 'w')\
-      as config_file:
-      pickle.dump(default_config, config_file)
-
+    write_pickle(DEFAULT_CONFIG, '{}/{}'.format(self.PLUGIN_LOGDIR,
+                                                CONFIG_FILENAME))
     self.visualizer = Visualizer(session, self.PLUGIN_LOGDIR)
+
 
   def _update_config(self):
     '''Reads the config file from disk or creates a new one.'''
-    global default_config
     filename = '{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME)
-
-    try:
-      with open(filename, 'r') as file:
-        config = pickle.load(file)
-    except EOFError:
-      config = default_config
-
-    default_config = config
+    config = read_pickle(filename, default=self.previous_config)
+    self.previous_config = config
     return config
 
 
@@ -58,9 +49,7 @@ class Beholder():
         self.frame_placeholder: frame
     })
     path = '{}/{}'.format(self.PLUGIN_LOGDIR, SUMMARY_FILENAME)
-
-    with open(path, 'wb') as file:
-      file.write(summary)
+    write_file(summary, path)
 
 
   def _get_final_image(self, config, arrays=None, frame=None):
