@@ -9,6 +9,7 @@ py_library(
   name = "im_util",
   data = ["resources"],
   srcs = ["im_util.py"],
+  srcs_version = "PY2AND3",
 )
 
 py_library(
@@ -17,11 +18,13 @@ py_library(
   deps = [
     ":im_util"
   ],
+  srcs_version = "PY2AND3",
 )
 
 py_library(
   name = "file_system_tools",
   srcs = ["file_system_tools.py"],
+  srcs_version = "PY2AND3",
 )
 
 py_library(
@@ -33,4 +36,5 @@ py_library(
     ":file_system_tools",
     "@org_tensorflow_tensorboard//tensorboard/backend/event_processing:plugin_asset_util",
   ],
+  srcs_version = "PY2AND3",
 )

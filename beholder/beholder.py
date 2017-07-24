@@ -1,16 +1,18 @@
-from __future__ import division, print_function
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import time
 
 import numpy as np
 import tensorflow as tf
 
-from file_system_tools import read_pickle, write_pickle, write_file
-import im_util
-from shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
+from beholder.file_system_tools import read_pickle, write_pickle, write_file
+from beholder import im_util
+from .shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
   DEFAULT_CONFIG, CONFIG_FILENAME
-import video_writing
-from visualizer import Visualizer
+from beholder import video_writing
+from beholder.visualizer import Visualizer
 
 class Beholder():
 

@@ -300,6 +300,8 @@ limitations under the License.
         // to go from their restarted script back to tensorboard. Not elegant,
         // but an easy solution. TODO: review. Would be better to somehow detect the
         // user script restarted, and only send the config then.
+
+        // Causes issues if two clients are running at once.
         window.setInterval(function(){
           this._configChanged()
         }.bind(this), 500)
@@ -326,8 +328,6 @@ limitations under the License.
           }
         }
 
-        console.log(this._values)
-
         const url = getRouter().pluginRoute(PLUGIN_NAME, '/change-config');
         const postData = {
           values: this._values,
@@ -343,7 +343,6 @@ limitations under the License.
             this.$.video.restart()
           }
           cannot_connect = false
-          console.log('Response: ' + response.values)
         }.bind(this), function(failure){
           cannot_connect = true
         }.bind(this));

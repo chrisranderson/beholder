@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import pickle
 
 from google.protobuf import message
@@ -24,13 +28,13 @@ def read_tensor_summary(path):
 
 
 def write_pickle(obj, path):
-  with open(path, 'w') as file:
+  with open(path, 'wb') as file:
     pickle.dump(obj, file)
 
 
 def read_pickle(path, default=None):
   try:
-    with open(path) as file:
+    with open(path, 'rb') as file:
       result = pickle.load(file)
 
   except (IOError, EOFError):

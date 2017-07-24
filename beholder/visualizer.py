@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 from collections import deque
 from math import floor, sqrt
 import pickle
@@ -5,9 +9,10 @@ import pickle
 import numpy as np
 import tensorflow as tf
 
-import im_util
-from shared_config import SECTION_HEIGHT, IMAGE_WIDTH, DEFAULT_CONFIG,\
+from beholder import im_util
+from beholder.shared_config import SECTION_HEIGHT, IMAGE_WIDTH, DEFAULT_CONFIG,\
   SECTION_INFO_FILENAME
+from beholder.file_system_tools import write_pickle
 
 MIN_SQUARE_SIZE = 4
 
@@ -190,8 +195,7 @@ class Visualizer():
 
       infos.append(info)
 
-    with open('{}/{}'.format(self.logdir, SECTION_INFO_FILENAME), 'w') as file:
-      pickle.dump(infos, file)
+    write_pickle(infos, '{}/{}'.format(self.logdir, SECTION_INFO_FILENAME))
 
 
   def build_frame(self, arrays):
