@@ -1,0 +1,383 @@
+<!--
+@license
+Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../tf-backend/tf-backend.html">
+<link rel="import" href="../tf-categorization-utils/tf-categorization-utils.html">
+<link rel="import" href="../tf-dashboard-common/dashboard-style.html">
+<link rel="import" href="../tf-dashboard-common/tf-dashboard-layout.html">
+<link rel="import" href="../tf-dashboard-common/tf-regex-group.html">
+<link rel="import" href="../tf-runs-selector/tf-runs-selector.html">
+<link rel="import" href="beholder-video.html">
+<link rel="import" href="beholder-info.html">
+
+<dom-module id="beholder-dashboard">
+  <template>
+    <paper-dialog with-backdrop id="actual-image-size-dialog"></paper-dialog>
+    <tf-dashboard-layout>
+      <div class="sidebar">
+
+        <div class="sidebar-section">
+          <div class="title">Values</div>
+          <paper-radio-group
+            id="valuesSelector"
+            selected="{{_values}}">
+            <paper-radio-button name="trainable_variables">
+              <pre>tf.trainable_variables()</pre>
+            </paper-radio-button>
+            <paper-radio-button id="option-arrays" name="arrays">
+              <pre>b.update(arrays=[2D_ARRAYS])</pre>
+            </paper-radio-button>
+            <paper-radio-button id="option-frames" name="frames">
+              <pre>b.update(frame=2D_ARRAY)</pre>
+            </paper-radio-button>
+          </paper-radio-group>
+        </div>
+
+        <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
+
+          <div class="sidebar-section">
+            <div class="title">Mode</div>
+            <paper-radio-group id="modeSelector" selected="{{_mode}}">
+              <paper-radio-button name="current">
+                current values
+              </paper-radio-button>
+              <paper-radio-button name="variance">
+                variance over train steps
+              </paper-radio-button>
+              <template is="dom-if" if="[[_varianceSelected(_mode)]]">
+                <div class="title">Variance timesteps: {{_windowSize}}</div>
+                <paper-slider
+                  id="windowSlider"
+                  value="{{_windowSize}}"
+                  type="number"
+                  step="1"
+                  min="2"
+                  max="20"
+                  pin="true">
+                </paper-slider>
+              </template>
+            </paper-radio-group>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="title">Image scaling</div>
+            <paper-radio-group id="scalingSelector" selected="{{_scaling}}">
+
+              <paper-radio-button id="option-layer" name="layer">
+                per section
+              </paper-radio-button>
+              <paper-tooltip for="option-layer" position="right">
+                Black is the lowest value in that section, white is that largest value in that section.
+              </paper-tooltip>
+
+              <paper-radio-button id="option-network" name="network">
+                all sections
+              </paper-radio-button>
+              <paper-tooltip for="option-network" position="right">
+                Black is the smallest value in all sections, white is the largest value in all sections.
+              </paper-tooltip>
+            </paper-radio-group>
+          </div>
+
+        </template>
+
+        <div class="sidebar-section">
+          <div class="title">Updates per second: {{_FPS}}</div>
+          <paper-slider
+            id="FPSSlider"
+            value="{{_FPS}}"
+            type="number"
+            step="1"
+            min="0"
+            max="30"
+            pin="true">
+          </paper-slider>
+        </div>
+
+        <div class="sidebar-section">
+          <paper-button
+            class="x-button"
+            id="record_button"
+            on-tap="_toggleRecord">
+            [[_recordText]]
+          </paper-button>
+        </div>
+
+
+        <div class="sidebar-section">
+          <tf-runs-selector
+            id="runs-selector"
+            selected-runs="{{_selectedRuns}}"
+          ></tf-runs-selector>
+        </div>
+      </div>
+      <div class="center">
+<!--         <template is="dom-if" if="[[_dataNotFound]]">
+          <div class="no-data-warning">
+            <h3>No beholder tags were found.</h3>
+            <p>Probable causes:</p>
+            <ul>
+              <li>You haven’t written any tensor data to your event files.
+              <li>TensorBoard can’t find your event files.
+            </ul>
+            <p>
+            If you’re new to using TensorBoard, and want to find out how
+            to add data and set up your event files, check out the
+            <a href="https://github.com/tensorflow/tensorboard/blob/master/README.md">README</a>
+            and perhaps the <a href="https://www.tensorflow.org/get_started/summaries_and_tensorboard">TensorBoard tutorial</a>.
+            <p>
+            If you think TensorBoard is configured properly, please see
+            <a href="https://github.com/tensorflow/tensorboard/blob/master/README.md#my-tensorboard-isnt-showing-any-data-whats-wrong">the section of the README devoted to missing data problems</a>
+            and consider filing an issue on GitHub.
+          </div>
+        </template> -->
+        <!-- <template is="dom-if" if="[[!_dataNotFound]]"> -->
+          <!-- Why can't I display more than one? -->
+        <beholder-video id="video"> </beholder-video>
+
+        <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
+          <beholder-info
+            id="info"
+            fps="[[_FPS]]">
+          </beholder-info>
+        </template>
+
+      </div>
+    </tf-dashboard-layout>
+    <style include="dashboard-style"></style>
+    <style>
+      .center {
+        height: 100%;
+        display: flex;
+      }
+      .no-data-warning {
+        max-width: 540px;
+        margin: 80px auto 0 auto;
+      }
+      .title {
+        font-size: 16px;
+        margin: 8px 5px 8px 0;
+        color: black;
+      }
+      .title small {
+        font-weight: normal;
+      }
+      paper-radio-button {
+        display: block;
+        padding: 5px;
+      }
+      paper-radio-group {
+        margin-top: 5px;
+      }
+      paper-slider {
+        margin-left: 12px;
+        --paper-slider-knob-color: var(--tb-orange-strong);
+        --paper-slider-active-color: var(--tb-orange-strong);
+        flex-grow: 2;
+      }
+      pre {
+        display: inline;
+      }
+      paper-button#record_button {
+        color: #D32F2F;
+      }
+      paper-button#record_button.is-recording {
+        background: #D32F2F;
+        color: white;
+      }
+    </style>
+  </template>
+  <script>
+    "use strict";
+
+    import {RequestManager} from '../tf-backend/requestManager.js';
+    import {getTags} from '../tf-backend/backend.js';
+    import {getRouter} from '../tf-backend/router.js';
+    import {categorizeRunTagCombinations} from '../tf-categorization-utils/categorizationUtils.js';
+
+    const PLUGIN_NAME = 'beholder'
+    var cannot_connect = false
+
+    Polymer({
+      is: 'beholder-dashboard',
+      properties: {
+        _selectedRuns: Array,
+        _runToTag: Object,  // map<run: string, tags: string[]>
+        _dataNotFound: Boolean,
+
+        _categories: {
+          type: Array,
+          computed:
+            '_makeCategories(_runToTag, _selectedRuns, _tagGroupRegexes)',
+        },
+
+        _requestManager: {
+          type: Object,
+          value: () => new RequestManager(10, 0),
+        },
+
+        ////
+
+        _values: {
+          type: String,
+          value: 'trainable_variables',
+          observer: '_configChanged',
+        },
+
+        _mode: {
+          type: String,
+          value: 'variance',
+          observer: '_configChanged',
+        },
+
+        _scaling: {
+          type: String,
+          value: 'layer',
+          observer: '_configChanged',
+        },
+
+        _windowSize: {
+          type: Number,
+          value: 15,
+          observer: '_configChanged',
+        },
+
+        _previousFPS: {
+          type: Number,
+          value: 30,
+        },
+
+        _FPS: {
+          type: Number,
+          value: 10,
+          observer: '_configChanged',
+        },
+
+        _recordText: {
+          type: String,
+          value: 'start recording'
+        },
+
+        _isRecording: {
+          type: Boolean,
+          value: false,
+          observer: '_configChanged',
+        },
+      },
+
+      _valuesNotFrame(values) {
+        return values !== 'frames'
+      },
+
+      _varianceSelected(mode) {
+        return mode === 'variance';
+      },
+
+      ready() {
+        this.reload();
+
+        // "Fix" for when the user script restarts, and the config is out of sync.
+        // Every second should be fine, because it takes some time for the user
+        // to go from their restarted script back to tensorboard. Not elegant,
+        // but an easy solution. TODO: review. Would be better to somehow detect the
+        // user script restarted, and only send the config then.
+        window.setInterval(function(){
+          this._configChanged()
+        }.bind(this), 500)
+      },
+
+      reload(){
+        this._fetchTags()
+      },
+
+      _configChanged() {
+        // In case we aren't finished initializing yet.
+        const properties = [
+          this._values,
+          this._mode,
+          this._scaling,
+          this._windowSize,
+          this._FPS,
+          this._isRecording,
+        ]
+
+        for (var property of properties) {
+          if (typeof property === 'undefined') {
+            return
+          }
+        }
+
+        console.log(this._values)
+
+        const url = getRouter().pluginRoute(PLUGIN_NAME, '/change-config');
+        const postData = {
+          values: this._values,
+          mode: this._mode,
+          scaling: this._scaling,
+          window_size: this._windowSize,
+          FPS: this._FPS,
+          is_recording: this._isRecording
+        }
+
+        this._requestManager.request(url, postData).then(function(response){
+          if (cannot_connect) {
+            this.$.video.restart()
+          }
+          cannot_connect = false
+          console.log('Response: ' + response.values)
+        }.bind(this), function(failure){
+          cannot_connect = true
+        }.bind(this));
+      },
+
+      _fetchTags() {
+        const url = getRouter().pluginRoute(PLUGIN_NAME, '/tags');
+        return this._requestManager.request(url).then(runToTag => {
+          if (_.isEqual(runToTag, this._runToTag)) {
+            // No need to update anything if there are no changes.
+            return;
+          }
+          const tags = getTags(runToTag);
+          this.set('_dataNotFound', tags.length === 0);
+          this.set('_runToTag', runToTag);
+        });
+      },
+
+      _makeCategories(runToTag, selectedRuns, tagGroupRegexes) {
+        return categorizeRunTagCombinations(
+          runToTag, selectedRuns, tagGroupRegexes);
+      },
+
+      _toggleRecord() {
+        if (this._recordText == 'start recording') {
+          this.set('_recordText', 'stop recording')
+          this.set('_isRecording', true)
+        } else {
+          this.set('_recordText', 'start recording')
+          this.set('_isRecording', false)
+        }
+
+        this.$.record_button.classList.toggle('is-recording')
+      },
+    });
+  </script>
+</dom-module>
