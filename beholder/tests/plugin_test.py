@@ -14,7 +14,7 @@ from beholder.tensorboard_x.main import get_plugins
 
 URL_PREFIX = 'data/plugin/beholder'
 
-class MainTest(tf.test.TestCase):
+class PluginTest(tf.test.TestCase):
 
   def setUp(self):
     app = application.standard_tensorboard_wsgi(
