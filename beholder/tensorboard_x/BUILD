@@ -1,3 +1,6 @@
+package(default_visibility = ["//visibility:public"])
+
+
 load("@org_tensorflow_tensorboard//tensorboard/defs:vulcanize.bzl", "tensorboard_html_binary")
 load("@org_tensorflow_tensorboard//tensorboard/defs:web.bzl", "ts_web_library")
 load("@org_tensorflow_tensorboard//tensorboard/defs:zipper.bzl", "tensorboard_zip_file")

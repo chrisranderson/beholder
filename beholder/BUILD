@@ -13,17 +13,18 @@ py_library(
 )
 
 py_library(
-  name = "visualizer",
-  srcs = ["visualizer.py", "shared_config.py"],
-  deps = [
-    ":im_util"
-  ],
+  name = "file_system_tools",
+  srcs = ["file_system_tools.py"],
   srcs_version = "PY2AND3",
 )
 
 py_library(
-  name = "file_system_tools",
-  srcs = ["file_system_tools.py"],
+  name = "visualizer",
+  srcs = ["visualizer.py", "shared_config.py"],
+  deps = [
+    ":im_util",
+    ":file_system_tools",
+  ],
   srcs_version = "PY2AND3",
 )
 

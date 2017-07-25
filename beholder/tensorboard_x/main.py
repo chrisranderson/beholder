@@ -41,29 +41,34 @@ def get_assets_zip_provider():
   return lambda: open(path, 'rb')
 
 
+def get_plugins():
+  return [
+      beholder_plugin.BeholderPlugin,
+      core_plugin.CorePlugin,
+      scalars_plugin.ScalarsPlugin,
+      images_plugin.ImagesPlugin,
+      audio_plugin.AudioPlugin,
+      graphs_plugin.GraphsPlugin,
+      distributions_plugin.DistributionsPlugin,
+      histograms_plugin.HistogramsPlugin,
+      projector_plugin.ProjectorPlugin,
+      text_plugin.TextPlugin,
+      profile_plugin.ProfilePlugin,
+  ]
+
+
 def main(unused_argv=None):
   util.setup_logging()
   tb_app = tb_main.create_tb_app(
       assets_zip_provider=get_assets_zip_provider(),
-      plugins=[
+      plugins=get_plugins())
 
-          beholder_plugin.BeholderPlugin,
-
-          core_plugin.CorePlugin,
-          scalars_plugin.ScalarsPlugin,
-          images_plugin.ImagesPlugin,
-          audio_plugin.AudioPlugin,
-          graphs_plugin.GraphsPlugin,
-          distributions_plugin.DistributionsPlugin,
-          histograms_plugin.HistogramsPlugin,
-          projector_plugin.ProjectorPlugin,
-          text_plugin.TextPlugin,
-          profile_plugin.ProfilePlugin,
-      ])
   server, url = tb_main.make_simple_server(tb_app)
+
   logger = logging.getLogger('tensorflow' + util.LogHandler.EPHEMERAL)
   logger.setLevel(logging.INFO)
   logger.info('TensorBoard-X (My Plugin) 0.1 at %s (CTRL+C to quit) ', url)
+
   try:
     server.serve_forever()
   finally:
