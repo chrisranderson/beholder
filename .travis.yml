@@ -46,19 +46,18 @@ script:
       --strategy=Javac=worker \
       --strategy=Closure=worker
 
-  # TODO(@jart): Uncomment when tests are added.
-  # - |
-  #   bazel \
-  #     --output_base="${HOME}/.bazel-output-base" \
-  #     --batch \
-  #     --host_jvm_args=-Xmx500m \
-  #     --host_jvm_args=-Xms500m \
-  #     test \
-  #     "//beholder/..." \
-  #     --verbose_failures \
-  #     --test_output=errors \
-  #     --spawn_strategy=sandboxed \
-  #     --local_resources=400,2,1.0
+  - |
+    bazel \
+      --output_base="${HOME}/.bazel-output-base" \
+      --batch \
+      --host_jvm_args=-Xmx500m \
+      --host_jvm_args=-Xms500m \
+      test \
+      "//beholder/..." \
+      --verbose_failures \
+      --test_output=errors \
+      --spawn_strategy=sandboxed \
+      --local_resources=400,2,1.0
 
   - |
     DIR=$(pwd)

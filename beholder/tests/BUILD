@@ -22,15 +22,3 @@ py_test(
   ],
   srcs_version = "PY2AND3",
 )
-
-py_test(
-  name = 'run_all_tests',
-  srcs = [
-    "run_all_tests.py"
-  ],
-  deps = [
-    ":visualizer_test",
-    ":plugin_test",
-  ],
-  srcs_version = "PY2AND3",
-)
