@@ -4,7 +4,6 @@ from __future__ import print_function
 
 from collections import deque
 from math import floor, sqrt
-import pickle
 
 import numpy as np
 import tensorflow as tf

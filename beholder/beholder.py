@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from beholder.file_system_tools import read_pickle, write_pickle, write_file
 from beholder import im_util
-from .shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
+from beholder.shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
   DEFAULT_CONFIG, CONFIG_FILENAME
 from beholder import video_writing
 from beholder.visualizer import Visualizer

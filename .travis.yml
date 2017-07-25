@@ -1,0 +1,84 @@
+dist: trusty
+sudo: required
+
+language: python
+python:
+  - "2.7"
+  - "3.4"
+
+os:
+  - linux
+
+env:
+  - NAME=beholder BAZEL=0.5.1
+
+cache:
+  directories:
+    - $HOME/.bazel-output-base
+
+before_install:
+  - |
+    set -e
+    BAZEL_URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL}/bazel-${BAZEL}-installer-linux-x86_64.sh"
+    wget -t 3 -O install.sh "${BAZEL_URL}"
+    chmod +x install.sh
+    ./install.sh --user
+    rm -f install.sh
+
+  - pip install tensorflow
+  - pip install pylint
+
+script:
+  - |
+    bazel \
+      --output_base="${HOME}/.bazel-output-base" \
+      --batch \
+      --host_jvm_args=-Xmx500m \
+      --host_jvm_args=-Xms500m \
+      build \
+      "//${NAME}/..." \
+      --worker_verbose \
+      --verbose_failures \
+      --spawn_strategy=sandboxed \
+      --genrule_strategy=sandboxed \
+      --local_resources=400,2,1.0 \
+      --worker_max_instances=2 \
+      --strategy=Javac=worker \
+      --strategy=Closure=worker
+
+  # TODO(@jart): Uncomment when tests are added.
+  # - |
+  #   bazel \
+  #     --output_base="${HOME}/.bazel-output-base" \
+  #     --batch \
+  #     --host_jvm_args=-Xmx500m \
+  #     --host_jvm_args=-Xms500m \
+  #     test \
+  #     "//${NAME}/..." \
+  #     --verbose_failures \
+  #     --test_output=errors \
+  #     --spawn_strategy=sandboxed \
+  #     --local_resources=400,2,1.0
+
+  - |
+    DIR=$(pwd)
+    cd bazel-genfiles
+    find "${my_plugin}" -name \*.py -exec cp {} "${DIR}"/{} \;
+    cd "${DIR}"
+    pylint my_plugin
+
+before_cache:
+  - |
+    find "${HOME}/.bazel-output-base" \
+      -name \*.runfiles -print0 \
+      -or -name \*.tar.gz -print0 \
+      -or -name \*-execroot.json -print0 \
+      -or -name \*-tsc.json -print0 \
+      -or -name \*-params.pbtxt -print0 \
+      -or -name \*-args.txt -print0 \
+      -or -name \*.runfiles_manifest -print0 \
+      -or -name \*.server_params.pbtxt -print0 \
+      | xargs -0 rm -rf
+
+notifications:
+  email: false
