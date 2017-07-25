@@ -10,7 +10,7 @@ os:
   - linux
 
 env:
-  - NAME=beholder BAZEL=0.5.1
+  - BAZEL=0.5.1
 
 cache:
   directories:
@@ -36,7 +36,7 @@ script:
       --host_jvm_args=-Xmx500m \
       --host_jvm_args=-Xms500m \
       build \
-      "//${NAME}/..." \
+      "//beholder/..." \
       --worker_verbose \
       --verbose_failures \
       --spawn_strategy=sandboxed \
@@ -54,7 +54,7 @@ script:
   #     --host_jvm_args=-Xmx500m \
   #     --host_jvm_args=-Xms500m \
   #     test \
-  #     "//${NAME}/..." \
+  #     "//beholder/..." \
   #     --verbose_failures \
   #     --test_output=errors \
   #     --spawn_strategy=sandboxed \
@@ -63,9 +63,9 @@ script:
   - |
     DIR=$(pwd)
     cd bazel-genfiles
-    find "${my_plugin}" -name \*.py -exec cp {} "${DIR}"/{} \;
+    find "${beholder}" -name \*.py -exec cp {} "${DIR}"/{} \;
     cd "${DIR}"
-    pylint my_plugin
+    pylint beholder
 
 before_cache:
   - |
