@@ -67,8 +67,12 @@ class VisualizerTest(tf.test.TestCase):
         np.random.random((10, 10))
     ])
 
-    self.assertEqual(image.min(), 0)
-    self.assertEqual(image.max(), 255)
+    # To allow for floating point issues.
+    # x = np.array([254.9999999995])
+    # x.max() == 255.0
+    # x.astype(np.uint8).max() == 254
+    self.assertLessEqual(image.min(), 1)
+    self.assertGreaterEqual(image.max(), 254)
 
 
 if __name__ == '__main__':

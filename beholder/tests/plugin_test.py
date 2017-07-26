@@ -11,12 +11,39 @@ from werkzeug import test as werkzeug_test
 from werkzeug import wrappers
 
 from beholder.tensorboard_x.main import get_plugins
+from beholder.file_system_tools import write_pickle
 
 URL_PREFIX = 'data/plugin/beholder'
 
 class PluginTest(tf.test.TestCase):
 
+  def _write_dummy_files(self):
+    plugin_dir = '/tmp/beholder-demo/plugins/beholder'
+    tf.gfile.MakeDirs(plugin_dir)
+
+    info_path = plugin_dir + '/section-info.pkl'
+    config_path = plugin_dir + '/config.pkl'
+
+    write_pickle([{
+        'shape': '(3, 3, 3, 64)',
+        'mean': '1.131e-07',
+        'min': '2.022e-11',
+        'range': '3.949e-07',
+        'name': 'conv1_1/weights:0',
+        'max': '3.949e-07'
+    }], info_path)
+
+    write_pickle({
+        'scaling': 'layer',
+        'values': 'trainable_variables',
+        'is_recording': False,
+        'mode': 'variance',
+        'window_size': 10
+    }, config_path)
+
   def setUp(self):
+    self._write_dummy_files()
+
     app = application.standard_tensorboard_wsgi(
         '/tmp/beholder-demo',
         True,
@@ -24,6 +51,7 @@ class PluginTest(tf.test.TestCase):
         get_plugins()
     )
     self.server = werkzeug_test.Client(app, wrappers.BaseResponse)
+
 
 
   def _make_url(self, path):

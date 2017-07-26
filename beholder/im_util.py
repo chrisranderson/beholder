@@ -42,4 +42,5 @@ def scale_image_for_display(image, minimum=None, maximum=None):
 
   maximum = image.max() if maximum is None else maximum
   image *= 255 / maximum
+
   return image
