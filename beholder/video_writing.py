@@ -35,6 +35,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from abc import ABCMeta
+from abc import abstractmethod
 import os
 import subprocess as sp
 import sys
@@ -46,7 +48,20 @@ import tensorflow as tf
 DEVNULL = open(os.devnull, 'wb')
 PY3 = sys.version_info.major >= 3
 
-class FFMPEG_VideoWriter:
+
+class BaseVideoWriter(object):
+  __metaclass__ = ABCMeta
+
+  @abstractmethod
+  def write_frame(self, img_array):
+    raise NotImplementedError()
+
+  @abstractmethod
+  def close(self):
+    raise NotImplementedError()
+
+
+class FFMPEG_VideoWriter(BaseVideoWriter):
   """ A class for FFMPEG-based video writing.
 
   A class to write videos using ffmpeg. ffmpeg will write in a large
@@ -217,7 +232,7 @@ class FFMPEG_VideoWriter:
     del self.proc
 
 
-class PNGWriter():
+class PNGWriter(BaseVideoWriter):
   def __init__(self, logdir, size):
     self.frame_directory = logdir + '/video-frames-{}'.format(time.time())
     tf.gfile.MakeDirs(self.frame_directory)
@@ -225,8 +240,8 @@ class PNGWriter():
     self.size = size
     self.frame_number = 0
 
-  def write_frame(self, frame):
-    image = Image.fromarray(frame)
+  def write_frame(self, img_array):
+    image = Image.fromarray(img_array)
     image.save('{}/{}.png'.format(self.frame_directory,
                                   str(self.frame_number).zfill(5)))
     self.frame_number += 1

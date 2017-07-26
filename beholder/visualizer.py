@@ -15,7 +15,7 @@ from beholder.file_system_tools import write_pickle
 
 MIN_SQUARE_SIZE = 4
 
-class Visualizer():
+class Visualizer(object):
 
   def __init__(self, session, logdir):
     self.logdir = logdir

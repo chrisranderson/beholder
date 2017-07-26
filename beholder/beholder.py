@@ -14,7 +14,7 @@ from beholder.shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
 from beholder import video_writing
 from beholder.visualizer import Visualizer
 
-class Beholder():
+class Beholder(object):
 
   def __init__(self, session, logdir):
     self.video_writer = None
@@ -90,6 +90,7 @@ class Beholder():
     return final_image
 
 
+  # pylint: disable=redefined-variable-type
   def _update_recording(self, frame, config):
     '''Adds a frame to the video using ffmpeg if possible. If not, writes
     individual frames as png files in a directory.
