@@ -20,20 +20,28 @@ As TensorBoard's third party plugin system currently functions, you need to buil
 ## Use Beholder in your own scripts
 Before you begin training, create an instance of a Beholder:
 
-    from beholder.beholder import Beholder
-    visualizer = Beholder(session=sess,
-                          logdir=LOG_DIRECTORY)
+```python
+from beholder.beholder import Beholder
+visualizer = Beholder(session=sess,
+                      logdir=LOG_DIRECTORY)
+```
 
 In your train loop, add (to visualize `tf.trainable_variables()`:
 
-    visualizer.update() # equivalent to visualizer.update(arrays=sess.run(tf.trainable_variables()))
+```python
+visualizer.update() # equivalent to visualizer.update(arrays=sess.run(tf.trainable_variables()))
+```
 
 To visualize arbitrary tensors:
 
+```python
     evaluated_tensors = session.run([var1, var2, var3])
     visualizer.update(arrays=evaluated_tensors)
+```
 
 To watch frames that are already built:
 
+```python
     example_frame = np.random.randint(1, 255, (100, 100))
     visualizer.update(frame=example_frame)
+```
