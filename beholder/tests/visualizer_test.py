@@ -15,7 +15,7 @@ class VisualizerTest(tf.test.TestCase):
     session = tf.Session()
     visualizer.MIN_SQUARE_SIZE = 1
     path = '/tmp/beholder-demo/plugins/beholder/'
-    self.visualizer = visualizer.Visualizer(session, path)
+    self.visualizer = visualizer.Visualizer(path)
     self.visualizer.config['mode'] = 'current'
 
 

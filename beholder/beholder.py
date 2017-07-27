@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import time
 
 import numpy as np
@@ -33,7 +34,7 @@ class Beholder(object):
     tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
     write_pickle(DEFAULT_CONFIG, '{}/{}'.format(self.PLUGIN_LOGDIR,
                                                 CONFIG_FILENAME))
-    self.visualizer = Visualizer(session, self.PLUGIN_LOGDIR)
+    self.visualizer = Visualizer(self.PLUGIN_LOGDIR)
 
 
   def _get_config(self):
@@ -52,17 +53,29 @@ class Beholder(object):
     path = '{}/{}'.format(self.PLUGIN_LOGDIR, SUMMARY_FILENAME)
     write_file(summary, path)
 
+  def _get_image_relative_to_script(self, image):
+    script_directory = os.path.dirname(__file__)
+    filename = os.path.join(script_directory, 'resources/{}'.format(image))
+    return np.array(Image.open(filename))
 
   def _get_final_image(self, config, arrays=None, frame=None):
     if config['values'] == 'frames':
       if frame is None:
-        missing_path = 'beholder/resources/frame-missing.png'
-        final_image = np.array(Image.open(missing_path))
+        final_image = self._get_image_relative_to_script('frame-missing.png')
       else:
         frame = frame() if callable(frame) else frame
         final_image = im_util.scale_image_for_display(frame)
 
-    else:
+    elif config['values'] == 'arrays':
+      if arrays is None:
+        final_image = self._get_image_relative_to_script('arrays-missing.png')
+        # TODO: hack to clear the info. Should be cleaner.
+        self.visualizer._save_section_info([], [])
+      else:
+        final_image = self.visualizer.build_frame(arrays)
+
+    elif config['values'] == 'trainable_variables':
+      arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
       final_image = self.visualizer.build_frame(arrays)
 
     return final_image

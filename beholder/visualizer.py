@@ -17,12 +17,11 @@ MIN_SQUARE_SIZE = 3
 
 class Visualizer(object):
 
-  def __init__(self, session, logdir):
+  def __init__(self, logdir):
     self.logdir = logdir
     self.sections_over_time = deque([], DEFAULT_CONFIG['window_size'])
     self.config = DEFAULT_CONFIG
     self.old_config = DEFAULT_CONFIG
-    self.SESSION = session
 
 
   def _conv_section(self, array, section_height, image_width):
@@ -202,19 +201,10 @@ class Visualizer(object):
   def build_frame(self, arrays):
     self._maybe_clear_deque()
 
-    if self.config['values'] == 'trainable_variables':
-      arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
-
-    elif self.config['values'] == 'arrays':
-      if arrays is None:
-        arrays = [self.SESSION.run(x) for x in tf.trainable_variables()]
-      else:
-        arrays = arrays if isinstance(arrays, list) else [arrays]
-
+    arrays = arrays if isinstance(arrays, list) else [arrays]
     sections = self._arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
     self._save_section_info(arrays, sections)
     final_image = self._sections_to_image(sections)
-
 
     return final_image
 
