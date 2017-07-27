@@ -44,10 +44,11 @@ class VisualizerTest(tf.test.TestCase):
 
   def test_arrays_to_sections(self):
     array_1 = np.array(range(0, 100)).reshape(10, 10).astype(float)
-    section = self.visualizer._arrays_to_sections([array_1], 5, 10)[0]
+    section = self.visualizer._arrays_to_sections([array_1],
+                                                  SECTION_HEIGHT,
+                                                  IMAGE_WIDTH)[0]
     self.assertEqual(section[0, 0], 0)
-    self.assertEqual(section[1, 0], 10)
-    self.assertEqual(section[2, 0], 20)
+    self.assertEqual(section[-1, -1], 99)
 
 
   def test_sections_to_variance_sections(self):

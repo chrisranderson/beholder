@@ -26,10 +26,8 @@ limitations under the License.
         <ul>
           <li>[[item.name]]</li>
           <li>shape: [[item.shape]]</li>
-          <li>min: [[item.min]]</li>
+          <li>range: [ [[item.min]], [[item.max]] ] </li>
           <li>mean: [[item.mean]]</li>
-          <li>max: [[item.max]]</li>
-          <li>range: [[item.range]]</li>
         </ul>
       </div>
     </template>
@@ -37,10 +35,11 @@ limitations under the License.
     <style>
     .section-info {
       height: 128px;
-      margin: 0 0 20px 0;
+      margin: 0 0 5px 0;
     }
     .section-info ul {
       list-style-type: none;
+      margin: 0;
     }
     </style>
 
@@ -69,19 +68,18 @@ limitations under the License.
       },
 
       _reloaditems() {
-        let fps = this.fps === 0 ? 1 : this.fps
-
         window.setTimeout(function(){
-          this._requestManager.request(INFO_ROUTE).then(function(response){
-            this.splice('items', 0)
+          if (this.fps !== 0) {
+            this._requestManager.request(INFO_ROUTE).then(function(response){
+              this.splice('items', 0)
 
-            for (var item of response) {
-             this.push('items', item)
-            }
-          }.bind(this))
-
+              for (var item of response) {
+               this.push('items', item)
+              }
+            }.bind(this))
+          }
           this._reloaditems()
-        }.bind(this), 1000/fps)
+        }.bind(this), 1000/(this.fps === 0 ? 1 : this.fps))
       },
 
       ready() {

@@ -44,3 +44,15 @@ def scale_image_for_display(image, minimum=None, maximum=None):
   image *= 255 / maximum
 
   return image
+
+
+def pad_to_shape(array, shape, constant=245):
+  padding = []
+
+  for actual_dim, target_dim in zip(array.shape, shape):
+    start_padding = 0
+    end_padding = target_dim - actual_dim
+
+    padding.append((start_padding, end_padding))
+
+  return np.pad(array, padding, mode='constant', constant_values=constant)

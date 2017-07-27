@@ -79,14 +79,13 @@ class Beholder(object):
 
   def _update_frame(self, arrays, frame, config):
     final_image = self._get_final_image(config, arrays, frame)
-    image_height = final_image.shape[0]
 
     if self.summary_op is None or self.last_image_shape != final_image.shape:
       self.frame_placeholder = tf.placeholder(tf.uint8, final_image.shape)
       self.summary_op = tf.summary.tensor_summary(TAG_NAME,
                                                   self.frame_placeholder)
     self._write_summary(final_image)
-    self.last_image_shape = image_height
+    self.last_image_shape = final_image.shape
 
     return final_image
 

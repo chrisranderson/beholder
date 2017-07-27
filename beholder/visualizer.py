@@ -13,7 +13,7 @@ from beholder.shared_config import SECTION_HEIGHT, IMAGE_WIDTH, DEFAULT_CONFIG,\
   SECTION_INFO_FILENAME
 from beholder.file_system_tools import write_pickle
 
-MIN_SQUARE_SIZE = 4
+MIN_SQUARE_SIZE = 3
 
 class Visualizer(object):
 
@@ -77,10 +77,13 @@ class Visualizer(object):
 
     for i in range(in_channels):
       rows.append(array[:, :, i, :].reshape(block_height, -1, order='F'))
-      element_count += block_height * in_channels * block_width
 
+      # leave this line here. Gives it one extra row.
       if element_count >= max_element_count:
         break
+
+      element_count += block_height * in_channels * block_width
+
 
     return np.vstack(rows)
 
@@ -92,12 +95,16 @@ class Visualizer(object):
              for display. That needs to wait until after variance is computed.
     '''
     sections = []
-    section_area = section_height * image_width
 
     for array in arrays:
-      if len(array.shape) == 4:
+      if len(array.shape) == 1:
+        section = np.atleast_2d(array)
+      elif len(array.shape) == 2:
+        section = array
+      elif len(array.shape) == 4:
         section = self._conv_section(array, section_height, image_width)
       else:
+        section_area = section_height * image_width
         flattened_array = np.ravel(array)[:int(section_area / MIN_SQUARE_SIZE)]
         cell_count = np.prod(flattened_array.shape)
         cell_area = section_area / cell_count
@@ -141,7 +148,7 @@ class Visualizer(object):
 
 
   def _sections_to_image(self, sections):
-    padding_size = 20
+    padding_size = 5
 
     sections = im_util.scale_sections(sections, self.config['scaling'])
 
@@ -152,12 +159,7 @@ class Visualizer(object):
       final_stack.append(padding)
       final_stack.append(section)
 
-    image_height = len(sections) * SECTION_HEIGHT +\
-                   (padding_size * (len(sections) - 1))
-
-    return im_util.resize(np.vstack(final_stack).astype(np.uint8),
-                          image_height,
-                          IMAGE_WIDTH)
+    return np.vstack(final_stack).astype(np.uint8)
 
 
   def _maybe_clear_deque(self):
