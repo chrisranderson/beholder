@@ -30,6 +30,7 @@ py_library(
 
 py_library(
   name = "beholder",
+  data = ["resources"],
   srcs = ["beholder.py", "shared_config.py", "video_writing.py"],
   deps = [
     ":im_util",

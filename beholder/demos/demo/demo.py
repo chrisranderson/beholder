@@ -55,7 +55,7 @@ def train():
 
   def weight_variable(shape):
     """Create a weight variable with appropriate initialization."""
-    initial = tf.truncated_normal(shape, stddev=0.01)
+    initial = tf.truncated_normal(shape, stddev=0.00001)
     return tf.Variable(initial)
 
   def bias_variable(shape):

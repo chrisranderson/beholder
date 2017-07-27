@@ -16,3 +16,4 @@ rnn_demo
 *.mp4
 
 sandbox
+*egg-info

@@ -5,6 +5,7 @@ from __future__ import print_function
 import time
 
 import numpy as np
+from PIL import Image
 import tensorflow as tf
 
 from beholder.file_system_tools import read_pickle, write_pickle, write_file
@@ -25,7 +26,7 @@ class Beholder(object):
     self.frame_placeholder = None
     self.summary_op = None
 
-    self.last_image_height = 0
+    self.last_image_shape = []
     self.last_update_time = time.time()
     self.previous_config = DEFAULT_CONFIG
 
@@ -55,7 +56,8 @@ class Beholder(object):
   def _get_final_image(self, config, arrays=None, frame=None):
     if config['values'] == 'frames':
       if frame is None:
-        final_image = np.reshape(range(100*100), (100, 100))
+        missing_path = 'beholder/resources/frame-missing.png'
+        final_image = np.array(Image.open(missing_path))
       else:
         frame = frame() if callable(frame) else frame
         final_image = im_util.scale_image_for_display(frame)
@@ -77,15 +79,14 @@ class Beholder(object):
 
   def _update_frame(self, arrays, frame, config):
     final_image = self._get_final_image(config, arrays, frame)
-    image_height, image_width = final_image.shape
+    image_height = final_image.shape[0]
 
-    if self.summary_op is None or self.last_image_height != image_height:
-      self.frame_placeholder = tf.placeholder(tf.uint8, [image_height,
-                                                         image_width])
+    if self.summary_op is None or self.last_image_shape != final_image.shape:
+      self.frame_placeholder = tf.placeholder(tf.uint8, final_image.shape)
       self.summary_op = tf.summary.tensor_summary(TAG_NAME,
                                                   self.frame_placeholder)
     self._write_summary(final_image)
-    self.last_image_height = image_height
+    self.last_image_shape = image_height
 
     return final_image
 

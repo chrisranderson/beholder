@@ -109,7 +109,10 @@ class BeholderPlugin(base_plugin.TBPlugin):
         time.sleep(1/(self.FPS))
 
       array = self._fetch_current_frame()
-      image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
+      if len(array.shape) == 2:
+        image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
+      if len(array.shape) == 3:
+        image = Image.fromarray(array)
       bytes_buffer = io.BytesIO()
       image.save(bytes_buffer, 'PNG')
       image_bytes = bytes_buffer.getvalue()
