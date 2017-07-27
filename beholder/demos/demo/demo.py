@@ -151,7 +151,7 @@ def train():
   test_writer = tf.summary.FileWriter(LOG_DIRECTORY + '/test')
   tf.global_variables_initializer().run()
 
-  visualizer = Beholder(session=sess, 
+  visualizer = Beholder(session=sess,
                         logdir=LOG_DIRECTORY)
 
 
@@ -183,8 +183,9 @@ def train():
     #   else:  # Record a summary
         print('i', i)
         summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dict(True))
+        stuff = sess.run([x, hidden1], feed_dict=feed_dict(True))
         visualizer.update(
-          arrays=gradient_arrays, 
+          arrays=stuff + gradient_arrays,
           frame=lambda: np.random.standard_normal((100, 100)),
         )
         train_writer.add_summary(summary, i)
