@@ -34,11 +34,12 @@ class PluginTest(tf.test.TestCase):
     }], info_path)
 
     write_pickle({
-        'scaling': 'layer',
         'values': 'trainable_variables',
-        'is_recording': False,
         'mode': 'variance',
-        'window_size': 10
+        'scaling': 'layer',
+        'window_size': 10,
+        'FPS': 10,
+        'is_recording': False,
     }, config_path)
 
   def setUp(self):
