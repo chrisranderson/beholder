@@ -77,12 +77,11 @@ class Visualizer(object):
     for i in range(in_channels):
       rows.append(array[:, :, i, :].reshape(block_height, -1, order='F'))
 
-      # leave this line here. Gives it one extra row.
+      # This line should be left in this position. Gives it one extra row.
       if element_count >= max_element_count:
         break
 
       element_count += block_height * in_channels * block_width
-
 
     return np.vstack(rows)
 

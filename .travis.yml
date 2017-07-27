@@ -30,6 +30,7 @@ before_install:
   - pip install pillow
 
 script:
+  - pip install .
   - |
     bazel \
       --output_base="${HOME}/.bazel-output-base" \
