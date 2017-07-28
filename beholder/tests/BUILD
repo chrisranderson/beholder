@@ -22,3 +22,16 @@ py_test(
   ],
   srcs_version = "PY2AND3",
 )
+
+py_test(
+  name = "beholder_test",
+  srcs = [
+    "beholder_test.py",
+    "//beholder:shared_config.py",
+  ],
+  deps = [
+    "//beholder:beholder",
+    "//beholder:file_system_tools",
+  ],
+  srcs_version = "PY2AND3",
+)

@@ -8,6 +8,7 @@ import time
 from google.protobuf import message
 import numpy as np
 from PIL import Image
+import tensorflow as tf
 from werkzeug import wrappers
 
 from tensorboard.backend import http_util
@@ -86,11 +87,10 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
     self.FPS = config['FPS']
 
-    try:
-      write_pickle(config, '{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME))
-    except IOError:
-      print('Could not write config file. Does the logdir exist?')
+    if not tf.gfile.Exists(self.PLUGIN_LOGDIR):
+      tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
 
+    write_pickle(config, '{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME))
     return http_util.Respond(request, {'config': config}, 'application/json')
 
 

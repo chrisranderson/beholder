@@ -98,29 +98,29 @@ def train():
       tf.summary.histogram('activations', activations)
       return activations
 
-  # #conv1
-  # kernel = tf.Variable(tf.truncated_normal([1, 1, 1, 1], dtype=tf.float32,
-  #                                                    stddev=1e-1), name='conv-weights')
-  # conv = tf.nn.conv2d(image_shaped_input, kernel, [1, 1, 1, 1], padding='VALID')
-  # biases = tf.Variable(tf.constant(0.0, shape=[kernel.get_shape().as_list()[-1]], dtype=tf.float32),
-  #                      trainable=True, name='biases')
-  # out = tf.nn.bias_add(conv, biases)
-  # conv2_1 = tf.nn.relu(out, name='relu')
+  #conv1
+  kernel = tf.Variable(tf.truncated_normal([5, 5, 1, 10], dtype=tf.float32,
+                                                     stddev=1e-1), name='conv-weights')
+  conv = tf.nn.conv2d(image_shaped_input, kernel, [1, 1, 1, 1], padding='VALID')
+  biases = tf.Variable(tf.constant(0.0, shape=[kernel.get_shape().as_list()[-1]], dtype=tf.float32),
+                       trainable=True, name='biases')
+  out = tf.nn.bias_add(conv, biases)
+  conv2_1 = tf.nn.relu(out, name='relu')
 
-  # #conv2
-  # kernel2 = tf.Variable(tf.truncated_normal([1, 1, 1, 1], dtype=tf.float32,
-  #                                                    stddev=1e-1), name='conv-weights2')
-  # conv2 = tf.nn.conv2d(conv2_1, kernel2, [1, 1, 1, 1], padding='VALID')
-  # biases2 = tf.Variable(tf.constant(0.0, shape=[kernel2.get_shape().as_list()[-1]], dtype=tf.float32),
-  #                      trainable=True, name='biases')
-  # out2 = tf.nn.bias_add(conv2, biases2)
-  # conv2_12 = tf.nn.relu(out2, name='relu')
+  #conv2
+  kernel2 = tf.Variable(tf.truncated_normal([3, 3, 10, 20], dtype=tf.float32,
+                                                     stddev=1e-1), name='conv-weights2')
+  conv2 = tf.nn.conv2d(conv2_1, kernel2, [1, 1, 1, 1], padding='VALID')
+  biases2 = tf.Variable(tf.constant(0.0, shape=[kernel2.get_shape().as_list()[-1]], dtype=tf.float32),
+                       trainable=True, name='biases')
+  out2 = tf.nn.bias_add(conv2, biases2)
+  conv2_12 = tf.nn.relu(out2, name='relu')
 
-  # flattened = tf.contrib.layers.flatten(conv2_12)
+  flattened = tf.contrib.layers.flatten(conv2_12)
 
 
-  hidden1 = nn_layer(x, x.get_shape().as_list()[1], 10, 'layer1')
-  # hidden1 = nn_layer(flattened, flattened.get_shape().as_list()[1], 100, 'layer1')
+  # hidden1 = nn_layer(x, x.get_shape().as_list()[1], 10, 'layer1')
+  hidden1 = nn_layer(flattened, flattened.get_shape().as_list()[1], 10, 'layer1')
 
   with tf.name_scope('dropout'):
     keep_prob = tf.placeholder(tf.float32)

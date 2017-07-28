@@ -29,7 +29,7 @@ class Beholder(object):
 
     self.last_image_shape = []
     self.last_update_time = time.time()
-    self.previous_config = DEFAULT_CONFIG
+    self.previous_config = dict(DEFAULT_CONFIG)
 
     tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
     write_pickle(DEFAULT_CONFIG, '{}/{}'.format(self.PLUGIN_LOGDIR,
@@ -103,12 +103,12 @@ class Beholder(object):
     return final_image
 
 
-  # pylint: disable=redefined-variable-type
   def _update_recording(self, frame, config):
     '''Adds a frame to the video using ffmpeg if possible. If not, writes
     individual frames as png files in a directory.
     '''
-    is_recording, fps = config['is_recording'], config['FPS']
+    # pylint: disable=redefined-variable-type
+    is_recording = config['is_recording']
     filename = self.PLUGIN_LOGDIR + '/video-{}.mp4'.format(time.time())
 
     if is_recording:
@@ -116,7 +116,7 @@ class Beholder(object):
         try:
           self.video_writer = video_writing.FFMPEG_VideoWriter(filename,
                                                                frame.shape,
-                                                               fps)
+                                                               15)
         except OSError:
           print('Something broke with ffmpeg. Saving frames to disk instead.')
           self.video_writer = video_writing.PNGWriter(self.PLUGIN_LOGDIR,

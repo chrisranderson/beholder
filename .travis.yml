@@ -27,7 +27,6 @@ before_install:
 
   - pip install tensorflow
   - pip install pylint
-  - pip install pillow
 
 script:
   - pip install .

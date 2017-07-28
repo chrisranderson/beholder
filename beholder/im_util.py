@@ -37,13 +37,15 @@ def scale_sections(sections, scaling_scope):
 
 
 def scale_image_for_display(image, minimum=None, maximum=None):
+  image = image.astype(float)
+
   minimum = image.min() if minimum is None else minimum
   image -= minimum
 
   maximum = image.max() if maximum is None else maximum
   image *= 255 / maximum
 
-  return image
+  return image.astype(int)
 
 
 def pad_to_shape(array, shape, constant=245):
