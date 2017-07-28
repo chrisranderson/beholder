@@ -25,6 +25,15 @@ class BeholderTest(tf.test.TestCase):
     conv_weights = tf.Variable(tf.truncated_normal([3, 3, 1, 32],
                                                    dtype=tf.float32,
                                                    stddev=1e-1))
+    fc_weights = tf.Variable(tf.truncated_normal([10, 500],
+                                                   dtype=tf.float32,
+                                                   stddev=1e-1))
+    bias = tf.Variable(tf.truncated_normal([500],
+                                            dtype=tf.float32,
+                                            stddev=1e-1))
+    weird_shape = tf.Variable(tf.truncated_normal([1, 2, 3],
+                                                  dtype=tf.float32,
+                                                  stddev=1e-1))
     self.sess = tf.Session()
     self.sess.run(tf.global_variables_initializer())
 

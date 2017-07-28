@@ -43,9 +43,12 @@ def scale_image_for_display(image, minimum=None, maximum=None):
   image -= minimum
 
   maximum = image.max() if maximum is None else maximum
-  image *= 255 / maximum
 
-  return image.astype(int)
+  if maximum == 0:
+    return image
+  else:
+    image *= 255 / maximum
+    return image.astype(int)
 
 
 def pad_to_shape(array, shape, constant=245):
