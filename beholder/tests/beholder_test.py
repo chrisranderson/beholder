@@ -18,7 +18,7 @@ class BeholderTest(tf.test.TestCase):
     write_pickle(self.config, '/tmp/beholder-test/plugins/beholder/config.pkl')
 
   def _dummy_frame(self):
-    frame = np.random.randint(0, 255, (100, 100))
+    frame = np.random.randint(0, 255, (100, 100)).astype(np.uint8)
     return frame
 
   def setUp(self):

@@ -42,6 +42,7 @@ import subprocess as sp
 import sys
 import time
 
+import numpy as np
 from PIL import Image
 import tensorflow as tf
 
@@ -241,7 +242,7 @@ class PNGWriter(BaseVideoWriter):
     self.frame_number = 0
 
   def write_frame(self, img_array):
-    image = Image.fromarray(img_array)
+    image = Image.fromarray(img_array.astype(np.uint8))
     image.save('{}/{}.png'.format(self.frame_directory,
                                   str(self.frame_number).zfill(5)))
     self.frame_number += 1
