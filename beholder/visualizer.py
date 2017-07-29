@@ -24,7 +24,7 @@ class Visualizer(object):
     self.old_config = DEFAULT_CONFIG
 
 
-  def _conv_section(self, array, section_height, image_width):
+  def _reshape_conv_array(self, array, section_height, image_width):
     '''Reshape a rank 4 array to be rank 2, where each column of block_width is
     a filter, and each row of block height is an input channel. For example:
 
@@ -78,7 +78,7 @@ class Visualizer(object):
       rows.append(array[:, :, i, :].reshape(block_height, -1, order='F'))
 
       # This line should be left in this position. Gives it one extra row.
-      if element_count >= max_element_count:
+      if element_count >= max_element_count and not self.config['show_all']:
         break
 
       element_count += block_height * in_channels * block_width
@@ -86,38 +86,85 @@ class Visualizer(object):
     return np.vstack(rows)
 
 
-  def _arrays_to_sections(self, arrays, section_height, image_width):
+  def _determine_image_width(self, arrays, base_width):
+    final_width = base_width
+
+    for array in arrays:
+      rank = len(array.shape)
+
+      if rank == 1:
+        width = len(array)
+      if rank == 2:
+        width = array.shape[1]
+      if rank == 4:
+        width = array.shape[1] * array.shape[3]
+
+      if width > final_width:
+        final_width = width
+
+    return final_width
+
+
+  def _reshape_irregular_array(self, array, section_height, image_width):
+    '''Reshapes arrays of ranks not in {1, 2, 4}
+    '''
+    section_area = section_height * image_width
+    flattened_array = np.ravel(array)
+
+    if not self.config['show_all']:
+      flattened_array = flattened_array[:int(section_area/MIN_SQUARE_SIZE)]
+
+    cell_count = np.prod(flattened_array.shape)
+    cell_area = section_area / cell_count
+
+    cell_side_length = floor(sqrt(cell_area))
+    row_count = max(1, int(section_height / cell_side_length))
+    col_count = int(cell_count / row_count)
+
+    # Reshape the truncated array so that it has the same aspect ratio as
+    # the section.
+
+    # Truncate whatever remaining values there are that don't fit. Hopefully
+    # it doesn't matter that the last few (< section count) aren't there.
+    section = np.reshape(flattened_array[:row_count * col_count],
+                         (row_count, col_count))
+
+    return section
+
+
+  def _arrays_to_sections(self, arrays, base_section_height, image_width):
     '''
     input: unprocessed numpy arrays.
     returns: columns of the size that they will appear in the image, not scaled
              for display. That needs to wait until after variance is computed.
     '''
     sections = []
+    show_all = self.config['show_all']
+
+    if show_all:
+      image_width = self._determine_image_width(arrays, image_width)
 
     for array in arrays:
-      if len(array.shape) == 1:
+      rank = len(array.shape)
+
+      if rank == 1:
+        section_height = base_section_height
         section = np.atleast_2d(array)
-      elif len(array.shape) == 2:
+      elif rank == 2:
+        section_height = max(base_section_height, array.shape[0])
         section = array
-      elif len(array.shape) == 4:
-        section = self._conv_section(array, section_height, image_width)
+      elif rank == 4:
+        section_height = max(base_section_height,
+                             array.shape[0] * array.shape[2])
+        section = self._reshape_conv_array(array, section_height, image_width)
       else:
-        section_area = section_height * image_width
-        flattened_array = np.ravel(array)[:int(section_area / MIN_SQUARE_SIZE)]
-        cell_count = np.prod(flattened_array.shape)
-        cell_area = section_area / cell_count
+        section_height = max(base_section_height, section.shape[0] * 2)
+        section = self._reshape_irregular_array(array,
+                                                section_height,
+                                                image_width)
 
-        cell_side_length = floor(sqrt(cell_area))
-        row_count = max(1, int(section_height / cell_side_length))
-        col_count = int(cell_count / row_count)
-
-        # Reshape the truncated array so that it has the same aspect ratio as
-        # the section.
-
-        # Truncate whatever remaining values there are that don't fit. Hopefully
-        # it doesn't matter that the last few (< section count) aren't there.
-        section = np.reshape(flattened_array[:row_count * col_count],
-                             (row_count, col_count))
+      if not show_all:
+        section_height = base_section_height
 
       sections.append(im_util.resize(section, section_height, image_width))
 
@@ -151,7 +198,7 @@ class Visualizer(object):
     sections = im_util.scale_sections(sections, self.config['scaling'])
 
     final_stack = [sections[0]]
-    padding = np.ones((padding_size, IMAGE_WIDTH)) * 245
+    padding = np.ones((padding_size, sections[0].shape[1])) * 245
 
     for section in sections[1:]:
       final_stack.append(padding)
@@ -162,7 +209,7 @@ class Visualizer(object):
 
   def _maybe_clear_deque(self):
     '''Clears the deque if certain parts of the config have changed.'''
-    for config_item in ['values', 'mode']:
+    for config_item in ['values', 'mode', 'show_all']:
       if self.config[config_item] != self.old_config[config_item]:
         self.sections_over_time.clear()
         break
@@ -191,6 +238,7 @@ class Visualizer(object):
       info['mean'] = '{:.3e}'.format(section.mean())
       info['max'] = '{:.3e}'.format(section.max())
       info['range'] = '{:.3e}'.format(section.max() - section.min())
+      info['height'] = section.shape[0]
 
       infos.append(info)
 

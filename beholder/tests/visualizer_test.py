@@ -19,7 +19,7 @@ class VisualizerTest(tf.test.TestCase):
     self.visualizer.config['mode'] = 'current'
 
 
-  def test_conv_section(self):
+  def test_reshape_conv_array(self):
     max_size = 5
 
     for height in range(1, max_size): # pylint:disable=too-many-nested-blocks
@@ -28,9 +28,9 @@ class VisualizerTest(tf.test.TestCase):
           for out_channel in range(1, max_size):
             shape = [height, width, in_channel, out_channel]
             array = np.reshape(range(np.prod(shape)), shape)
-            reshaped = self.visualizer._conv_section(array,
-                                                     SECTION_HEIGHT,
-                                                     IMAGE_WIDTH)
+            reshaped = self.visualizer._reshape_conv_array(array,
+                                                           SECTION_HEIGHT,
+                                                           IMAGE_WIDTH)
 
             for in_number in range(in_channel):
               for out_number in range(out_channel):

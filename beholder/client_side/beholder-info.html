@@ -22,7 +22,7 @@ limitations under the License.
   <template>
   
     <template id="repeater" is="dom-repeat" items="{{items}}">
-      <div class="section-info">
+      <div class="section-info" style$="height: [[item.height]]px">
         <ul>
           <li>[[item.name]]</li>
           <li>shape: [[item.shape]]</li>
@@ -34,12 +34,12 @@ limitations under the License.
 
     <style>
     .section-info {
-      height: 128px;
       margin: 0 0 5px 0;
     }
     .section-info ul {
       list-style-type: none;
       margin: 0;
+      padding-left: 10px;
     }
     </style>
 

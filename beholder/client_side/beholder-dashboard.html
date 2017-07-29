@@ -50,6 +50,12 @@ limitations under the License.
               <pre>b.update(frame=2D_ARRAY)</pre>
             </paper-radio-button>
           </paper-radio-group>
+
+          <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
+            <paper-checkbox
+              checked="{{_showAll}}"
+            >Show all data <i>(can be resource intensive)</i></paper-checkbox>
+          </template>
         </div>
 
         <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
@@ -63,19 +69,19 @@ limitations under the License.
               <paper-radio-button name="variance">
                 variance over train steps
               </paper-radio-button>
-              <template is="dom-if" if="[[_varianceSelected(_mode)]]">
-                <div class="title">Variance timesteps: {{_windowSize}}</div>
-                <paper-slider
-                  id="windowSlider"
-                  value="{{_windowSize}}"
-                  type="number"
-                  step="1"
-                  min="2"
-                  max="20"
-                  pin="true">
-                </paper-slider>
-              </template>
             </paper-radio-group>
+            <template is="dom-if" if="[[_varianceSelected(_mode)]]">
+              <div class="title">Variance timesteps: {{_windowSize}}</div>
+              <paper-slider
+                id="windowSlider"
+                value="{{_windowSize}}"
+                type="number"
+                step="1"
+                min="2"
+                max="20"
+                pin="true">
+              </paper-slider>
+            </template>
           </div>
 
           <div class="sidebar-section">
@@ -182,6 +188,10 @@ limitations under the License.
       .title small {
         font-weight: normal;
       }
+      paper-checkbox {
+        display: block;
+        padding: 4px;
+      }
       paper-radio-button {
         display: block;
         padding: 5px;
@@ -283,6 +293,12 @@ limitations under the License.
           value: false,
           observer: '_configChanged',
         },
+
+        _showAll: {
+          type: Boolean,
+          value: false,
+          observer: '_configChanged'
+        },
       },
 
       _valuesNotFrame(values) {
@@ -321,6 +337,7 @@ limitations under the License.
           this._windowSize,
           this._FPS,
           this._isRecording,
+          this._showAll,
         ]
 
         for (var property of properties) {
@@ -336,7 +353,8 @@ limitations under the License.
           scaling: this._scaling,
           window_size: this._windowSize,
           FPS: this._FPS,
-          is_recording: this._isRecording
+          is_recording: this._isRecording,
+          show_all: this._showAll
         }
 
         this._requestManager.request(url, postData).then(function(response){

@@ -14,7 +14,8 @@ DEFAULT_CONFIG = {
     'scaling': 'layer',
     'window_size': 15,
     'FPS': 10,
-    'is_recording': False
+    'is_recording': False,
+    'show_all': False
 }
 
 SECTION_HEIGHT = 128
