@@ -139,12 +139,13 @@ class Visualizer(object):
              for display. That needs to wait until after variance is computed.
     '''
     sections = []
+    sections_to_resize_later = {}
     show_all = self.config['show_all']
 
     if show_all:
       image_width = self._determine_image_width(arrays, image_width)
 
-    for array in arrays:
+    for array_number, array in enumerate(arrays):
       rank = len(array.shape)
 
       if rank == 1:
@@ -166,13 +167,28 @@ class Visualizer(object):
       if not show_all:
         section_height = base_section_height
 
-      sections.append(im_util.resize(section, section_height, image_width))
+      section_size = section_height * image_width
+      array_size = np.prod(array.shape)
+
+      # Only calculate variance for what we have to. In some cases (biases),
+      # the section is larger than the array, so we don't want to calculate
+      # variance for the same value over and over - better to resize later.
+      # About a 6-7x speedup for a big network with a big variance window.
+      if section_size > array_size:
+        sections.append(section)
+        sections_to_resize_later[array_number] = section_height
+      else:
+        sections.append(im_util.resize(section, section_height, image_width))
 
     self.sections_over_time.append(sections)
 
     if self.config['mode'] == 'variance':
       sections = self._sections_to_variance_sections(self.sections_over_time)
 
+    for array_number, height in sections_to_resize_later.items():
+      sections[array_number] = im_util.resize(sections[array_number],
+                                              height,
+                                              image_width)
     return sections
 
 
