@@ -7,12 +7,12 @@ Beholder is a TensorBoard plugin for viewing frames of a video while your model 
 As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin.
 
 ## Build and run TensorBoard
-1. [Install Bazel](https://docs.bazel.build/versions/master/install.html)
+1. [Install Bazel](https://docs.bazel.build/versions/master/install.html). Tested with Bazel 0.5.1 and 0.5.3. One test with 0.2.2b did not work.
 2. Clone the repo: `git clone https://github.com/chrisranderson/beholder.git`
 3. `cd beholder`
 4. Install Beholder: `pip install .`
-4. Build TensorBoard (this will take a while): `bazel build beholder/tensorboard_x`
-5. Run the newly built TensorBoard: `./bazel-bin/beholder/tensorboard_x/tensorboard_x --logdir=/tmp/beholder-demo`
+5. Build TensorBoard (this will take a while): `bazel build beholder/tensorboard_x`
+6. Run the newly built TensorBoard: `./bazel-bin/beholder/tensorboard_x/tensorboard_x --logdir=/tmp/beholder-demo`
 
 ## Run the demo
 `bazel build beholder/demos/demo && ./bazel-bin/beholder/demos/demo/demo`
