@@ -128,13 +128,6 @@ limitations under the License.
           </paper-button>
         </div>
 
-
-        <div class="sidebar-section">
-          <tf-runs-selector
-            id="runs-selector"
-            selected-runs="{{_selectedRuns}}"
-          ></tf-runs-selector>
-        </div>
       </div>
       <div class="center">
 <!--         <template is="dom-if" if="[[_dataNotFound]]">
@@ -214,6 +207,10 @@ limitations under the License.
       paper-button#record_button.is-recording {
         background: #D32F2F;
         color: white;
+      }
+
+      .sidebar-section.beholder-dashboard:last-child {
+        flex-grow: 0
       }
     </style>
   </template>
