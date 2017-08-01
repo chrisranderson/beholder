@@ -98,6 +98,8 @@ class Visualizer(object):
         width = array.shape[1]
       if rank == 4:
         width = array.shape[1] * array.shape[3]
+      else:
+        width = base_width
 
       if width > final_width:
         final_width = width
@@ -117,7 +119,7 @@ class Visualizer(object):
     cell_count = np.prod(flattened_array.shape)
     cell_area = section_area / cell_count
 
-    cell_side_length = floor(sqrt(cell_area))
+    cell_side_length = max(1, floor(sqrt(cell_area)))
     row_count = max(1, int(section_height / cell_side_length))
     col_count = int(cell_count / row_count)
 
@@ -159,7 +161,8 @@ class Visualizer(object):
                              array.shape[0] * array.shape[2])
         section = self._reshape_conv_array(array, section_height, image_width)
       else:
-        section_height = max(base_section_height, section.shape[0] * 2)
+        section_height = max(base_section_height,
+                             np.prod(array.shape) // image_width)
         section = self._reshape_irregular_array(array,
                                                 section_height,
                                                 image_width)

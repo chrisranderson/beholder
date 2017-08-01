@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 from beholder.beholder import Beholder
-from beholder.shared_config import DEFAULT_CONFIG
+from beholder.shared_config import DEFAULT_CONFIG, IMAGE_WIDTH, SECTION_HEIGHT
 from beholder.file_system_tools import write_pickle
 
 
@@ -18,22 +18,36 @@ class BeholderTest(tf.test.TestCase):
     write_pickle(self.config, '/tmp/beholder-test/plugins/beholder/config.pkl')
 
   def _dummy_frame(self):
-    frame = np.random.randint(0, 255, (100, 100)).astype(np.uint8)
+    frame = np.random.randint(0, 255, (SECTION_HEIGHT * 2,
+                                       IMAGE_WIDTH)).astype(np.uint8)
     return frame
 
   def setUp(self):
-    conv_weights = tf.Variable(tf.truncated_normal([3, 3, 1, 32],
-                                                   dtype=tf.float32,
-                                                   stddev=1e-1))
-    fc_weights = tf.Variable(tf.truncated_normal([10, 500],
-                                                   dtype=tf.float32,
-                                                   stddev=1e-1))
-    bias = tf.Variable(tf.truncated_normal([500],
-                                            dtype=tf.float32,
-                                            stddev=1e-1))
-    weird_shape = tf.Variable(tf.truncated_normal([1, 2, 3],
-                                                  dtype=tf.float32,
-                                                  stddev=1e-1))
+    conv_weights_small = tf.Variable(tf.truncated_normal([3, 3, 1, 5],
+                                                         dtype=tf.float32,
+                                                         stddev=1e-1))
+    fc_weights_small = tf.Variable(tf.truncated_normal([10, 500],
+                                                       dtype=tf.float32,
+                                                       stddev=1e-1))
+    bias_small = tf.Variable(tf.truncated_normal([2],
+                                                 dtype=tf.float32,
+                                                 stddev=1e-1))
+    weird_shape_small = tf.Variable(tf.truncated_normal([1, 2, 3],
+                                                        dtype=tf.float32,
+                                                        stddev=1e-1))
+
+    conv_weights_big = tf.Variable(tf.truncated_normal([3, 3, SECTION_HEIGHT, IMAGE_WIDTH],
+                                                       dtype=tf.float32,
+                                                       stddev=1e-1))
+    fc_weights_big = tf.Variable(tf.truncated_normal([SECTION_HEIGHT, IMAGE_WIDTH + 10],
+                                                     dtype=tf.float32,
+                                                     stddev=1e-1))
+    bias_big = tf.Variable(tf.truncated_normal([SECTION_HEIGHT * IMAGE_WIDTH + 100],
+                                               dtype=tf.float32,
+                                               stddev=1e-1))
+    weird_shape_big = tf.Variable(tf.truncated_normal([SECTION_HEIGHT, IMAGE_WIDTH, 3],
+                                                      dtype=tf.float32,
+                                                      stddev=1e-1))
     self.sess = tf.Session()
     self.sess.run(tf.global_variables_initializer())
 
@@ -53,7 +67,8 @@ class BeholderTest(tf.test.TestCase):
     self.config['values'] = 'arrays'
     self._write_config()
     self.beholder.update(arrays=None)
-    self.beholder.update(arrays=[np.random.randint(0, 100, (10, 10))])
+    self.beholder.update(arrays=[np.random.randint(0, 100, (IMAGE_WIDTH,
+                                                            SECTION_HEIGHT*2))])
 
 
   def test_update_frame(self):
