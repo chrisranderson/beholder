@@ -4,7 +4,7 @@
 
 Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbitrary arrays, or view frames that you've already created.
 
-As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin. Expected time: 5-30 minutes (high variance due to Internet speed).
+As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin (and potentially [install a nightly build of TensorFlow](#install-a-nightly-build-of-tensorflow)). Expected time: 5-30 minutes (high variance due to Internet speed).
 
 ## Build and run TensorBoard
 1. [Install Bazel](https://docs.bazel.build/versions/master/install.html). Tested with Bazel 0.5.1 and 0.5.3. One test with 0.2.2b did not work.
@@ -41,13 +41,22 @@ example_frame = np.random.randint(1, 255, (100, 100))
 visualizer.update(arrays=evaluated_tensors, frame=example_frame)
 ```
 
+
+## Install a nightly build of TensorFlow
+**This is optional, but currently required to see summaries besides Beholder's visualizations in this version of TensorBoard.**
+
+This repository uses a version of TensorBoard that is newer than the one that comes with TensorFlow. It relies on a nightly build of TensorFlow. You can find nightly builds on [the TensorFlow README](https://github.com/tensorflow/tensorflow#installation), and `pip install <WHEEL_FILE>` to install.
+
+If you don't install the nightly build, you'll be able to use Beholder, but not see any other summaries (other plugins will be listed as inactive, even if they sould be active). This issue is related to this error: `Protocol message has no non-repeated submessage field "metadata"`. Installing a nightly build should fix this problem.
+
+
 ## Visualization guide
 
 ### Array visualization
 
 Each array is reshaped to fit in a rectangular box called a *section*. *Sections* are composed of groups of pixels called *blocks* that represent individual values in the original array. When `tf.trainable_variables()` is selected, the lower the section is in the image, the deeper it is in the network.
 
-Not all values of large arrays will be shown unless the *Show all data* option is selected (with the exception of oddly shaped arrays, see *Other arrays* below).
+Not all values of large arrays will be shown unless the *Show all data* option is selected (with the exception of [oddly shaped arrays](#other-arrays)).
 
 #### 1D arrays (e.g. biases)
 ![bias](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/bias.png)
