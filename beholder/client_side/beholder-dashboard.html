@@ -308,17 +308,6 @@ limitations under the License.
 
       ready() {
         this.reload();
-
-        // "Fix" for when the user script restarts, and the config is out of sync.
-        // Every second should be fine, because it takes some time for the user
-        // to go from their restarted script back to tensorboard. Not elegant,
-        // but an easy solution. TODO: review. Would be better to somehow detect the
-        // user script restarted, and only send the config then.
-
-        // Causes issues if two clients are running at once.
-        window.setInterval(function(){
-          this._configChanged()
-        }.bind(this), 500)
       },
 
       reload(){

@@ -37,7 +37,8 @@ def read_pickle(path, default=None):
     with open(path, 'rb') as pickle_file:
       result = pickle.load(pickle_file)
 
-  except (IOError, EOFError):
+  except (IOError, EOFError, ValueError):
+    # TODO: log this somehow? Could swallow errors I don't intend.
     result = default
 
   return result

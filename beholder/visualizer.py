@@ -86,27 +86,6 @@ class Visualizer(object):
     return np.vstack(rows)
 
 
-  def _determine_image_width(self, arrays, base_width):
-    final_width = base_width
-
-    for array in arrays:
-      rank = len(array.shape)
-
-      if rank == 1:
-        width = len(array)
-      if rank == 2:
-        width = array.shape[1]
-      if rank == 4:
-        width = array.shape[1] * array.shape[3]
-      else:
-        width = base_width
-
-      if width > final_width:
-        final_width = width
-
-    return final_width
-
-
   def _reshape_irregular_array(self, array, section_height, image_width):
     '''Reshapes arrays of ranks not in {1, 2, 4}
     '''
@@ -134,7 +113,46 @@ class Visualizer(object):
     return section
 
 
-  def _arrays_to_sections(self, arrays, base_section_height, image_width):
+  def _determine_image_width(self, arrays, show_all):
+    final_width = IMAGE_WIDTH
+
+    if show_all:
+      for array in arrays:
+        rank = len(array.shape)
+
+        if rank == 1:
+          width = len(array)
+        elif rank == 2:
+          width = array.shape[1]
+        elif rank == 4:
+          width = array.shape[1] * array.shape[3]
+        else:
+          width = IMAGE_WIDTH
+
+        if width > final_width:
+          final_width = width
+
+    return final_width
+
+
+  def _determine_section_height(self, array, show_all):
+    rank = len(array.shape)
+    height = SECTION_HEIGHT
+
+    if show_all:
+      if rank == 1:
+        height = SECTION_HEIGHT
+      if rank == 2:
+        height = max(SECTION_HEIGHT, array.shape[0])
+      elif rank == 4:
+        height = max(SECTION_HEIGHT, array.shape[0] * array.shape[2])
+      else:
+        height = max(SECTION_HEIGHT, np.prod(array.shape) // IMAGE_WIDTH)
+
+    return height
+
+
+  def _arrays_to_sections(self, arrays):
     '''
     input: unprocessed numpy arrays.
     returns: columns of the size that they will appear in the image, not scaled
@@ -143,40 +161,29 @@ class Visualizer(object):
     sections = []
     sections_to_resize_later = {}
     show_all = self.config['show_all']
-
-    if show_all:
-      image_width = self._determine_image_width(arrays, image_width)
+    image_width = self._determine_image_width(arrays, show_all)
 
     for array_number, array in enumerate(arrays):
       rank = len(array.shape)
+      section_height = self._determine_section_height(array, show_all)
 
       if rank == 1:
-        section_height = base_section_height
         section = np.atleast_2d(array)
       elif rank == 2:
-        section_height = max(base_section_height, array.shape[0])
         section = array
       elif rank == 4:
-        section_height = max(base_section_height,
-                             array.shape[0] * array.shape[2])
         section = self._reshape_conv_array(array, section_height, image_width)
       else:
-        section_height = max(base_section_height,
-                             np.prod(array.shape) // image_width)
         section = self._reshape_irregular_array(array,
                                                 section_height,
                                                 image_width)
-
-      if not show_all:
-        section_height = base_section_height
-
-      section_size = section_height * image_width
-      array_size = np.prod(array.shape)
-
       # Only calculate variance for what we have to. In some cases (biases),
       # the section is larger than the array, so we don't want to calculate
       # variance for the same value over and over - better to resize later.
       # About a 6-7x speedup for a big network with a big variance window.
+      section_size = section_height * image_width
+      array_size = np.prod(array.shape)
+
       if section_size > array_size:
         sections.append(section)
         sections_to_resize_later[array_number] = section_height
@@ -268,7 +275,7 @@ class Visualizer(object):
     self._maybe_clear_deque()
 
     arrays = arrays if isinstance(arrays, list) else [arrays]
-    sections = self._arrays_to_sections(arrays, SECTION_HEIGHT, IMAGE_WIDTH)
+    sections = self._arrays_to_sections(arrays)
     self._save_section_info(arrays, sections)
     final_image = self._sections_to_image(sections)
 

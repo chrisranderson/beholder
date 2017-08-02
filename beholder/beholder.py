@@ -29,19 +29,29 @@ class Beholder(object):
 
     self.last_image_shape = []
     self.last_update_time = time.time()
+    self.config_last_modified_time = 0
     self.previous_config = dict(DEFAULT_CONFIG)
 
-    tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
-    write_pickle(DEFAULT_CONFIG, '{}/{}'.format(self.PLUGIN_LOGDIR,
-                                                CONFIG_FILENAME))
+    if not tf.gfile.Exists(self.PLUGIN_LOGDIR):
+      tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
+      write_pickle(DEFAULT_CONFIG, '{}/{}'.format(self.PLUGIN_LOGDIR,
+                                                  CONFIG_FILENAME))
+
     self.visualizer = Visualizer(self.PLUGIN_LOGDIR)
 
 
   def _get_config(self):
     '''Reads the config file from disk or creates a new one.'''
     filename = '{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME)
-    config = read_pickle(filename, default=self.previous_config)
-    self.previous_config = config
+    modified_time = os.path.getmtime(filename)
+
+    if modified_time != self.config_last_modified_time:
+      config = read_pickle(filename, default=self.previous_config)
+      self.previous_config = config
+    else:
+      config = self.previous_config
+
+    self.config_last_modified_time = modified_time
     return config
 
 
@@ -118,7 +128,9 @@ class Beholder(object):
                                                                frame.shape,
                                                                15)
         except OSError:
-          print('Something broke with ffmpeg. Saving frames to disk instead.')
+          message = ('Either ffmpeg is not installed, or something else went '
+                     'wrong. Saving individual frames to disk instead.')
+          print(message)
           self.video_writer = video_writing.PNGWriter(self.PLUGIN_LOGDIR,
                                                       frame.shape)
       self.video_writer.write_frame(frame)
@@ -140,14 +152,13 @@ class Beholder(object):
              frame can also be a function, which only is evaluated when the
              "frame" option is selected by the client.
     '''
-    config = self._get_config()
-    self.visualizer.update(config)
+    new_config = self._get_config()
 
-    if self._enough_time_has_passed(config['FPS']):
+    if self._enough_time_has_passed(self.previous_config['FPS']):
+      self.visualizer.update(new_config)
       self.last_update_time = time.time()
-
-      final_image = self._update_frame(arrays, frame, config)
-      self._update_recording(final_image, config)
+      final_image = self._update_frame(arrays, frame, new_config)
+      self._update_recording(final_image, new_config)
 
 
   ##############################################################################
@@ -160,7 +171,7 @@ class Beholder(object):
       optimizer: the optimizer op.
       loss: the op that computes your loss value.
 
-    Returns: the tensors and the train_step op.
+    Returns: the gradient tensors and the train_step op.
     '''
     if var_list is None:
       var_list = tf.trainable_variables()
