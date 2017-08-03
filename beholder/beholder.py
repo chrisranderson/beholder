@@ -28,7 +28,7 @@ class Beholder(object):
 
     self.last_image_shape = []
     self.last_update_time = time.time()
-    self.config_last_modified_time = 0
+    self.config_last_modified_time = -1
     self.previous_config = dict(DEFAULT_CONFIG)
 
     if not tf.gfile.Exists(self.PLUGIN_LOGDIR):

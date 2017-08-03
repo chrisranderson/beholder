@@ -30,7 +30,6 @@ class BeholderPlugin(base_plugin.TBPlugin):
     self.PLUGIN_LOGDIR = pau.PluginDirectory(context.logdir, PLUGIN_NAME)
     self.FPS = 10
     self.most_recent_frame = get_image_relative_to_script('no-data.png')
-    print('self.most_recent_frame', self.most_recent_frame)
     self.most_recent_info = []
 
     if not tf.gfile.Exists(self.PLUGIN_LOGDIR):

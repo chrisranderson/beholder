@@ -183,9 +183,9 @@ def train():
     #   else:  # Record a summary
         print('i', i)
         summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dict(True))
-        stuff = sess.run([x, hidden1], feed_dict=feed_dict(True))
+        stuff = sess.run(x, feed_dict=feed_dict(True))
         visualizer.update(
-          arrays=stuff + gradient_arrays,
+          arrays=[stuff[0].reshape(28, 28)] + gradient_arrays,
           frame=lambda: np.random.standard_normal((100, 100)),
         )
         train_writer.add_summary(summary, i)
@@ -194,9 +194,8 @@ def train():
   test_writer.close()
 
 def main(_):
-  if tf.gfile.Exists(LOG_DIRECTORY):
-    tf.gfile.DeleteRecursively(LOG_DIRECTORY)
-  tf.gfile.MakeDirs(LOG_DIRECTORY)
+  if not tf.gfile.Exists(LOG_DIRECTORY):
+    tf.gfile.MakeDirs(LOG_DIRECTORY)
   train()
 
 if __name__ == '__main__':
