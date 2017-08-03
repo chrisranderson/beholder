@@ -5,6 +5,7 @@
 
 questions.txt
 notes.txt
+video-notes.txt
 
 /bazel-*
 beholder_dashboard/data

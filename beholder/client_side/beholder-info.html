@@ -69,15 +69,14 @@ limitations under the License.
 
       _reloaditems() {
         window.setTimeout(function(){
-          if (this.fps !== 0) {
-            this._requestManager.request(INFO_ROUTE).then(function(response){
-              this.splice('items', 0)
+          this._requestManager.request(INFO_ROUTE).then(function(response){
+            this.splice('items', 0)
 
-              for (var item of response) {
-               this.push('items', item)
-              }
-            }.bind(this))
-          }
+            for (var item of response) {
+             this.push('items', item)
+            }
+          }.bind(this))
+
           this._reloaditems()
         }.bind(this), 1000/(this.fps === 0 ? 1 : this.fps))
       },

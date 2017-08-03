@@ -40,6 +40,9 @@ limitations under the License.
     import {getRouter} from '../tf-backend/router.js';
 
     const FEED_ROUTE = getRouter().pluginRoute('beholder', '/beholder-frame')
+    const PING_ROUTE = getRouter().pluginRoute('beholder', '/ping')
+
+    var connectionFailed = false
 
     Polymer({
       is: "beholder-video",
@@ -55,12 +58,28 @@ limitations under the License.
         }
       },
 
-      restart() {
+      ready() {
+        // Periodically check the connection, restart if needed.
+        window.setInterval(function(){
+          this._requestManager.request(PING_ROUTE).then(
+              function(response){
+                if (connectionFailed) {
+                  this.restartVideo()
+                }
+                connectionFailed = false
+              }.bind(this),
+              function(error){
+                connectionFailed = true
+              }.bind(this))
+        }.bind(this), 1000)
+      },
+
+      restartVideo() {
         var newImage = document.createElement('img')
-        this.$.container.appendChild(newImage)
         newImage.src = FEED_ROUTE + '?t=' + new Date().getTime()
         newImage.id = 'video'
         newImage.className = 'style-scope beholder-video'
+        this.$.container.appendChild(newImage)
 
         this.$.container.removeChild(this.$.video)
         this.$.video = newImage

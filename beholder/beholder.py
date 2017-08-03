@@ -5,12 +5,11 @@ from __future__ import print_function
 import os
 import time
 
-import numpy as np
-from PIL import Image
 import tensorflow as tf
 
-from beholder.file_system_tools import read_pickle, write_pickle, write_file
 from beholder import im_util
+from beholder.file_system_tools import read_pickle, write_pickle, write_file,\
+  get_image_relative_to_script
 from beholder.shared_config import PLUGIN_NAME, TAG_NAME, SUMMARY_FILENAME,\
   DEFAULT_CONFIG, CONFIG_FILENAME
 from beholder import video_writing
@@ -63,22 +62,19 @@ class Beholder(object):
     path = '{}/{}'.format(self.PLUGIN_LOGDIR, SUMMARY_FILENAME)
     write_file(summary, path)
 
-  def _get_image_relative_to_script(self, image):
-    script_directory = os.path.dirname(__file__)
-    filename = os.path.join(script_directory, 'resources/{}'.format(image))
-    return np.array(Image.open(filename))
+
 
   def _get_final_image(self, config, arrays=None, frame=None):
     if config['values'] == 'frames':
       if frame is None:
-        final_image = self._get_image_relative_to_script('frame-missing.png')
+        final_image = get_image_relative_to_script('frame-missing.png')
       else:
         frame = frame() if callable(frame) else frame
         final_image = im_util.scale_image_for_display(frame)
 
     elif config['values'] == 'arrays':
       if arrays is None:
-        final_image = self._get_image_relative_to_script('arrays-missing.png')
+        final_image = get_image_relative_to_script('arrays-missing.png')
         # TODO: hack to clear the info. Should be cleaner.
         self.visualizer._save_section_info([], [])
       else:

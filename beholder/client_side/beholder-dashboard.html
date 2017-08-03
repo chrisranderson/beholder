@@ -21,11 +21,8 @@ limitations under the License.
 <link rel="import" href="../paper-tooltip/paper-tooltip.html">
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../tf-backend/tf-backend.html">
-<link rel="import" href="../tf-categorization-utils/tf-categorization-utils.html">
 <link rel="import" href="../tf-dashboard-common/dashboard-style.html">
 <link rel="import" href="../tf-dashboard-common/tf-dashboard-layout.html">
-<link rel="import" href="../tf-dashboard-common/tf-regex-group.html">
-<link rel="import" href="../tf-runs-selector/tf-runs-selector.html">
 <link rel="import" href="beholder-video.html">
 <link rel="import" href="beholder-info.html">
 
@@ -130,27 +127,7 @@ limitations under the License.
 
       </div>
       <div class="center">
-<!--         <template is="dom-if" if="[[_dataNotFound]]">
-          <div class="no-data-warning">
-            <h3>No beholder tags were found.</h3>
-            <p>Probable causes:</p>
-            <ul>
-              <li>You haven’t written any tensor data to your event files.
-              <li>TensorBoard can’t find your event files.
-            </ul>
-            <p>
-            If you’re new to using TensorBoard, and want to find out how
-            to add data and set up your event files, check out the
-            <a href="https://github.com/tensorflow/tensorboard/blob/master/README.md">README</a>
-            and perhaps the <a href="https://www.tensorflow.org/get_started/summaries_and_tensorboard">TensorBoard tutorial</a>.
-            <p>
-            If you think TensorBoard is configured properly, please see
-            <a href="https://github.com/tensorflow/tensorboard/blob/master/README.md#my-tensorboard-isnt-showing-any-data-whats-wrong">the section of the README devoted to missing data problems</a>
-            and consider filing an issue on GitHub.
-          </div>
-        </template> -->
-        <!-- <template is="dom-if" if="[[!_dataNotFound]]"> -->
-          <!-- Why can't I display more than one? -->
+
         <beholder-video id="video"> </beholder-video>
 
         <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
@@ -218,25 +195,14 @@ limitations under the License.
     "use strict";
 
     import {RequestManager} from '../tf-backend/requestManager.js';
-    import {getTags} from '../tf-backend/backend.js';
     import {getRouter} from '../tf-backend/router.js';
-    import {categorizeRunTagCombinations} from '../tf-categorization-utils/categorizationUtils.js';
 
     const PLUGIN_NAME = 'beholder'
-    var cannot_connect = false
 
     Polymer({
       is: 'beholder-dashboard',
-      properties: {
-        _selectedRuns: Array,
-        _runToTag: Object,  // map<run: string, tags: string[]>
-        _dataNotFound: Boolean,
 
-        _categories: {
-          type: Array,
-          computed:
-            '_makeCategories(_runToTag, _selectedRuns, _tagGroupRegexes)',
-        },
+      properties: {
 
         _requestManager: {
           type: Object,
@@ -306,14 +272,6 @@ limitations under the License.
         return mode === 'variance';
       },
 
-      ready() {
-        this.reload();
-      },
-
-      reload(){
-        this._fetchTags()
-      },
-
       _configChanged() {
         // In case we aren't finished initializing yet.
         const properties = [
@@ -343,32 +301,7 @@ limitations under the License.
           show_all: this._showAll
         }
 
-        this._requestManager.request(url, postData).then(function(response){
-          if (cannot_connect) {
-            this.$.video.restart()
-          }
-          cannot_connect = false
-        }.bind(this), function(failure){
-          cannot_connect = true
-        }.bind(this));
-      },
-
-      _fetchTags() {
-        const url = getRouter().pluginRoute(PLUGIN_NAME, '/tags');
-        return this._requestManager.request(url).then(runToTag => {
-          if (_.isEqual(runToTag, this._runToTag)) {
-            // No need to update anything if there are no changes.
-            return;
-          }
-          const tags = getTags(runToTag);
-          this.set('_dataNotFound', tags.length === 0);
-          this.set('_runToTag', runToTag);
-        });
-      },
-
-      _makeCategories(runToTag, selectedRuns, tagGroupRegexes) {
-        return categorizeRunTagCombinations(
-          runToTag, selectedRuns, tagGroupRegexes);
+        this._requestManager.request(url, postData)
       },
 
       _toggleRecord() {
@@ -381,6 +314,9 @@ limitations under the License.
         }
 
         this.$.record_button.classList.toggle('is-recording')
+      },
+
+      reload() {
       },
     });
   </script>

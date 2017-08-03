@@ -18,7 +18,7 @@ from beholder.shared_config import PLUGIN_NAME, SECTION_HEIGHT, IMAGE_WIDTH
 from beholder.shared_config import SECTION_INFO_FILENAME, CONFIG_FILENAME,\
   TAG_NAME, SUMMARY_FILENAME, DEFAULT_CONFIG
 from beholder.file_system_tools import read_tensor_summary, read_pickle,\
-  write_pickle
+  write_pickle, get_image_relative_to_script
 
 
 class BeholderPlugin(base_plugin.TBPlugin):
@@ -29,7 +29,8 @@ class BeholderPlugin(base_plugin.TBPlugin):
     self._MULTIPLEXER = context.multiplexer
     self.PLUGIN_LOGDIR = pau.PluginDirectory(context.logdir, PLUGIN_NAME)
     self.FPS = 10
-    self.most_recent_frame = np.zeros((SECTION_HEIGHT, IMAGE_WIDTH))
+    self.most_recent_frame = get_image_relative_to_script('no-data.png')
+    print('self.most_recent_frame', self.most_recent_frame)
     self.most_recent_info = []
 
     if not tf.gfile.Exists(self.PLUGIN_LOGDIR):
@@ -42,6 +43,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
         '/change-config': self._serve_change_config,
         '/beholder-frame': self._serve_beholder_frame,
         '/section-info': self._serve_section_info,
+        '/ping': self._serve_ping,
         '/tags': self._serve_tags
     }
 
@@ -114,10 +116,12 @@ class BeholderPlugin(base_plugin.TBPlugin):
         time.sleep(1/(self.FPS))
 
       array = self._fetch_current_frame()
+
       if len(array.shape) == 2:
         image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
       if len(array.shape) == 3:
         image = Image.fromarray(array)
+
       bytes_buffer = io.BytesIO()
       image.save(bytes_buffer, 'PNG')
       image_bytes = bytes_buffer.getvalue()
@@ -131,7 +135,13 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
   @wrappers.Request.application
   def _serve_beholder_frame(self, request): # pylint: disable=unused-argument
+    # Thanks to Miguel Grinberg for this technique:
+    # https://blog.miguelgrinberg.com/post/video-streaming-with-flask
     mimetype = 'multipart/x-mixed-replace; boundary=frame'
     return wrappers.Response(response=self._frame_generator(),
                              status=200,
                              mimetype=mimetype)
+
+  @wrappers.Request.application
+  def _serve_ping(self, request): # pylint: disable=unused-argument
+    return http_util.Respond(request, {'status': 'alive'}, 'application/json')
