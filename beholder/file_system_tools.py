@@ -26,7 +26,7 @@ def read_tensor_summary(path):
   summary_proto = tf.Summary()
   summary_proto.ParseFromString(summary_string)
   tensor_proto = summary_proto.value[0].tensor
-  array = tf.contrib.util.make_ndarray(tensor_proto)
+  array = tf.make_ndarray(tensor_proto)
 
   return array
 
