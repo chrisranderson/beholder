@@ -182,11 +182,12 @@ def train():
     #     print('Adding run metadata for', i)
     #   else:  # Record a summary
         print('i', i)
-        summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dict(True))
-        stuff = sess.run(x, feed_dict=feed_dict(True))
+        feed_dictionary = feed_dict(True)
+        summary, gradient_arrays, _ = sess.run([merged, gradients, train_step], feed_dict=feed_dictionary)
+        first_of_batch = sess.run(x, feed_dict=feed_dictionary)[0].reshape(28, 28)
         visualizer.update(
-          arrays=[stuff[0].reshape(28, 28)] + gradient_arrays,
-          frame=lambda: np.random.standard_normal((100, 100)),
+          arrays=[first_of_batch] + gradient_arrays,
+          frame=first_of_batch,
         )
         train_writer.add_summary(summary, i)
 

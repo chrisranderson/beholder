@@ -67,7 +67,7 @@ def main(unused_argv=None):
 
   logger = logging.getLogger('tensorflow' + util.LogHandler.EPHEMERAL)
   logger.setLevel(logging.INFO)
-  logger.info('TensorBoard-X (My Plugin) 0.1 at %s (CTRL+C to quit) ', url)
+  logger.info('TensorBoard-X (Beholder) 0.1 at %s (CTRL+C to quit)', url)
 
   try:
     server.serve_forever()

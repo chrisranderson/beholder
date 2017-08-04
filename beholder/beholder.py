@@ -31,7 +31,7 @@ class Beholder(object):
     self.config_last_modified_time = -1
     self.previous_config = dict(DEFAULT_CONFIG)
 
-    if not tf.gfile.Exists(self.PLUGIN_LOGDIR):
+    if not tf.gfile.Exists(self.PLUGIN_LOGDIR + '/config.pkl'):
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
       write_pickle(DEFAULT_CONFIG, '{}/{}'.format(self.PLUGIN_LOGDIR,
                                                   CONFIG_FILENAME))
