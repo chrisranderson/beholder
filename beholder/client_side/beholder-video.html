@@ -79,9 +79,8 @@ limitations under the License.
         newImage.src = FEED_ROUTE + '?t=' + new Date().getTime()
         newImage.id = 'video'
         newImage.className = 'style-scope beholder-video'
-        this.$.container.appendChild(newImage)
-
         this.$.container.removeChild(this.$.video)
+        this.$.container.appendChild(newImage)
         this.$.video = newImage
       },
 

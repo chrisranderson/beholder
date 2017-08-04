@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import os
 import pickle
+import time
 
 import numpy as np
 from PIL import Image
@@ -17,6 +18,7 @@ def write_file(contents, path, mode='wb'):
 
 
 def read_tensor_summary(path):
+  print('Reading tensor summary.')
   with open(path, 'rb') as summary_file:
     summary_string = summary_file.read()
 
@@ -24,10 +26,15 @@ def read_tensor_summary(path):
     raise message.DecodeError('Empty summary.')
 
   summary_proto = tf.Summary()
+  print('Parsing from string.')
   summary_proto.ParseFromString(summary_string)
   tensor_proto = summary_proto.value[0].tensor
+  print('Making ndarray.')
+  a = time.time()
   array = tf.contrib.util.make_ndarray(tensor_proto)
-
+  b = time.time()
+  print('b-a', b-a)
+  print('Returning array.')
   return array
 
 

@@ -108,19 +108,24 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
 
   def _frame_generator(self):
+    print('Generator called.')
     while True:
+      print('Generator loop.')
       if self.FPS == 0:
         continue
       else:
         time.sleep(1/(self.FPS))
 
+      print('Fetching array.')
       array = self._fetch_current_frame()
 
+      print('PIL image.')
       if len(array.shape) == 2:
         image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
       if len(array.shape) == 3:
         image = Image.fromarray(array)
 
+      print('Converting to bytes.')
       bytes_buffer = io.BytesIO()
       image.save(bytes_buffer, 'PNG')
       image_bytes = bytes_buffer.getvalue()
@@ -129,6 +134,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
       content_type = b'Content-Type: image/png\r\n\r\n'
       response_content = frame_text + content_type + image_bytes + b'\r\n\r\n'
 
+      print('Yielding.')
       yield response_content
 
 

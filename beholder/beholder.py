@@ -122,7 +122,7 @@ class Beholder(object):
         try:
           self.video_writer = video_writing.FFMPEG_VideoWriter(filename,
                                                                frame.shape,
-                                                               15)
+                                                               5)
         except OSError:
           message = ('Either ffmpeg is not installed, or something else went '
                      'wrong. Saving individual frames to disk instead.')
