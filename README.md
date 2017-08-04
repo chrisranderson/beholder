@@ -4,9 +4,12 @@
 
 Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbitrary arrays, or view frames that you've already created.
 
-As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin (and potentially [install a nightly build of TensorFlow](#install-a-nightly-build-of-tensorflow)). Expected time: 5-30 minutes (high variance due to Internet speed).
+[Watch this video to see it in action.](https://www.youtube.com/watch?v=06HjEr0OX5k)
+
 
 ## Build and run TensorBoard
+As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin (and potentially [install a nightly build of TensorFlow](#install-a-nightly-build-of-tensorflow)). Expected time: 5-30 minutes (high variance due to Internet speed).
+
 1. [Install Bazel](https://docs.bazel.build/versions/master/install.html). Tested with Bazel 0.5.1 and 0.5.3. One test with 0.2.2b did not work.
 2. Clone the repository: `git clone https://github.com/chrisranderson/beholder.git`
 3. `cd beholder`
