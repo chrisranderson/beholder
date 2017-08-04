@@ -129,7 +129,7 @@ class FFMPEG_VideoWriter(BaseVideoWriter):
         '-f', 'rawvideo',
         '-vcodec', 'rawvideo',
         '-s', '%dx%d' % (size[1], size[0]),
-        '-pix_fmt', 'gray', #'rgb24',
+        '-pix_fmt', 'gray' if len(size) == 2 else 'rgb24',
         '-r', '%.02f' % fps,
         '-i', '-', '-an',
     ]
