@@ -2,12 +2,23 @@
 
 ![beholder demo video](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/demo.gif)
 
-Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbitrary arrays, or view frames that you've already created.
+Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbitrary arrays like gradients:
+
+![gradient example](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/gradient-example.png)
+
+Activations from a convolutional layer:
+
+![conv activation example](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/conv-activation-example.png)
+
+Or frames that you've already created:
+
+![frame example](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/frame-example.png)
 
 [Watch this video to see it in action.](https://www.youtube.com/watch?v=06HjEr0OX5k)
 
+## Installation
 
-## Build and run TensorBoard
+### Build and run TensorBoard
 As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin (and potentially [install a nightly build of TensorFlow](#install-a-nightly-build-of-tensorflow)). Expected time: 5-30 minutes (high variance due to Internet speed).
 
 1. [Install Bazel](https://docs.bazel.build/versions/master/install.html). Tested with Bazel 0.5.1 and 0.5.3. One test with 0.2.2b did not work.
@@ -17,6 +28,13 @@ As TensorBoard's third party plugin system currently functions, you need to buil
 5. Build TensorBoard (*this may take a while*): `bazel build beholder/tensorboard_x`
 6. Run the newly built TensorBoard: `./bazel-bin/beholder/tensorboard_x/tensorboard_x --logdir=/tmp/beholder-demo`
 7. Navigate to [http://localhost:6006](http://localhost:6006)
+
+### Install a nightly build of TensorFlow
+**This is optional, but currently required to see summaries besides Beholder's visualizations in this version of TensorBoard.**
+
+This repository uses a version of TensorBoard that is newer than the one that comes with TensorFlow. It relies on a nightly build of TensorFlow. You can find nightly builds on [the TensorFlow README](https://github.com/tensorflow/tensorflow#installation), and `pip install <WHEEL_FILE>` to install.
+
+If you don't install the nightly build, you'll be able to use Beholder, but not see any other summaries (other plugins will be listed as inactive, even if they sould be active). This issue is related to this error: `Protocol message has no non-repeated submessage field "metadata"`. Installing a nightly build should fix this problem.
 
 ## Run the demo
 `bazel build beholder/demos/demo && ./bazel-bin/beholder/demos/demo/demo`
@@ -36,7 +54,7 @@ In your train loop, trigger an update:
 visualizer.update() # visualizes tf.trainable_variables() by default
 ```
 
-`update` takes two optional parameters: `arrays` expects a list of arbitrary NumPy arrays and `frame` expects a 2D NumPy array:
+`update` takes two optional parameters: `arrays` expects a list of arbitrary NumPy arrays (like gradients or activations returned from `sess.run`) and `frame` expects a 2D NumPy array:
 
 ```python
 evaluated_tensors = session.run([var1, var2, var3])
@@ -44,22 +62,13 @@ example_frame = np.random.randint(1, 255, (100, 100))
 visualizer.update(arrays=evaluated_tensors, frame=example_frame)
 ```
 
-
-## Install a nightly build of TensorFlow
-**This is optional, but currently required to see summaries besides Beholder's visualizations in this version of TensorBoard.**
-
-This repository uses a version of TensorBoard that is newer than the one that comes with TensorFlow. It relies on a nightly build of TensorFlow. You can find nightly builds on [the TensorFlow README](https://github.com/tensorflow/tensorflow#installation), and `pip install <WHEEL_FILE>` to install.
-
-If you don't install the nightly build, you'll be able to use Beholder, but not see any other summaries (other plugins will be listed as inactive, even if they sould be active). This issue is related to this error: `Protocol message has no non-repeated submessage field "metadata"`. Installing a nightly build should fix this problem.
-
-
 ## Visualization guide
 
 ### Array visualization
 
 Each array is reshaped to fit in a rectangular box called a *section*. *Sections* are composed of groups of pixels called *blocks* that represent individual values in the original array. When `tf.trainable_variables()` is selected, the lower the section is in the image, the deeper it is in the network.
 
-Not all values of large arrays will be shown unless the *Show all data* option is selected (with the exception of [oddly shaped arrays](#other-arrays)).
+Not all values of large arrays will be shown unless the *Show all data* option is selected (with the exception of [oddly shaped arrays](#other-arrays)). [Here's an example frame when *Show all data* is enabled on a VGG network variant](https://github.com/chrisranderson/beholder/blob/master/readme-images/convolutional-activations.png). You'll need to download it to view the image at full scale.
 
 #### 1D arrays (e.g. biases)
 ![bias](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/bias.png)
@@ -79,6 +88,11 @@ Each row represents weights attached to the same input node, each column represe
 The orange 3x3 chunk is a single channel of a kernel. Rows of chunks (in yellow) correspond to the same input channel. Columns of chunks (in red) correspond to output channels. If the shape of your weight matrix is `(2, 3, 256, 512)`, there will be 256 rows and 512 columns of 2x3 blocks (assuming the *Show all data* option is selected).
 
 Using the *current values* option, you can determine whether there is high information content in your kernels. If the network has finished training and you have many columns that look similar, you might be able to conclude that there are redundancy issues and you can decrease the layer size.
+
+If the shape of the network "looks like" a 4D activation (`if shape[0] != shape[1] and shape[1] == shape[2]`) from a conv layer rather than a weight array, I reshape it differently:
+![conv activation example](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/conv-activation-example.png)
+
+
 
 #### Other arrays
 
