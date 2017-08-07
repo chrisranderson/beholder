@@ -14,7 +14,7 @@ or frames that you've already created:
 
 ![frame example](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/frame-example.png)
 
-[Watch this video to see it in action.](https://www.youtube.com/watch?v=06HjEr0OX5k)
+[I made a demo video you can watch](https://www.youtube.com/watch?v=06HjEr0OX5k), but you can find similar information in this README.
 
 ## Installation
 
