@@ -2,15 +2,15 @@
 
 ![beholder demo video](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/demo.gif)
 
-Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbitrary arrays like gradients:
+Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbitrary arrays like gradients,
 
 ![gradient example](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/gradient-example.png)
 
-Activations from a convolutional layer:
+activations from a convolutional layer,
 
 ![conv activation example](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/conv-activation-example.png)
 
-Or frames that you've already created:
+or frames that you've already created:
 
 ![frame example](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/frame-example.png)
 
