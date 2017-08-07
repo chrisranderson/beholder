@@ -18,7 +18,7 @@ URL_PREFIX = 'data/plugin/beholder'
 class PluginTest(tf.test.TestCase):
 
   def _write_dummy_files(self):
-    plugin_dir = '/tmp/beholder-demo/plugins/beholder'
+    plugin_dir = '/tmp/beholder-test/plugins/beholder'
     tf.gfile.MakeDirs(plugin_dir)
 
     info_path = plugin_dir + '/section-info.pkl'
@@ -40,6 +40,7 @@ class PluginTest(tf.test.TestCase):
         'window_size': 10,
         'FPS': 10,
         'is_recording': False,
+        'show_all': False
     }, config_path)
 
   def setUp(self):

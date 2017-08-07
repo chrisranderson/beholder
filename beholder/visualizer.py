@@ -20,8 +20,8 @@ class Visualizer(object):
   def __init__(self, logdir):
     self.logdir = logdir
     self.sections_over_time = deque([], DEFAULT_CONFIG['window_size'])
-    self.config = DEFAULT_CONFIG
-    self.old_config = DEFAULT_CONFIG
+    self.config = dict(DEFAULT_CONFIG)
+    self.old_config = dict(DEFAULT_CONFIG)
 
 
   def _reshape_conv_array(self, array, section_height, image_width):
@@ -68,6 +68,11 @@ class Visualizer(object):
         [ 94,  95,  96, 104, 105, 106, 114, 115, 116, 124, 125, 126],
         [ 97,  98,  99, 107, 108, 109, 117, 118, 119, 127, 128, 129]]
     '''
+
+    # E.g. [100, 24, 24, 10]: this shouldn't be reshaped like normal.
+    if array.shape[1] == array.shape[2] and array.shape[0] != array.shape[1]:
+      array = np.rollaxis(np.rollaxis(array, 2), 2)
+
     block_height, block_width, in_channels = array.shape[:3]
     rows = []
 
@@ -235,6 +240,7 @@ class Visualizer(object):
 
   def _maybe_clear_deque(self):
     '''Clears the deque if certain parts of the config have changed.'''
+
     for config_item in ['values', 'mode', 'show_all']:
       if self.config[config_item] != self.old_config[config_item]:
         self.sections_over_time.clear()
