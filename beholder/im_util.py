@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import numpy as np
 from PIL import Image
-from beholder.file_system_tools import resources_path, read_pickle
+from beholder.file_system_tools import resources_path
 
 def resize(nparray, height, width):
   image = Image.fromarray(nparray.astype(float))
@@ -76,7 +76,7 @@ def pad_to_shape(array, shape, constant=245):
 #
 # You should have received a copy of the CC0 legalcode along with this
 # work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-colormaps = read_pickle('{}/colormaps.pkl'.format(resources_path()))
+colormaps = np.load('{}/colormaps.npy'.format(resources_path()))
 magma_data, inferno_data, plasma_data, viridis_data = colormaps
 
 def apply_colormap(image, colormap='magma'):
