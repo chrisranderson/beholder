@@ -41,11 +41,21 @@ def read_pickle(path, default=None):
     with open(path, 'rb') as pickle_file:
       result = pickle.load(pickle_file)
 
-  except (IOError, EOFError, ValueError):
+  except (IOError, EOFError, ValueError) as e:
     # TODO: log this somehow? Could swallow errors I don't intend.
-    result = default
+    if default is not None:
+      result = default
+    else:
+      raise e
 
   return result
+
+
+def resources_path():
+  script_directory = os.path.dirname(__file__)
+  filename = os.path.join(script_directory, 'resources')
+  return filename
+
 
 def get_image_relative_to_script(filename):
   script_directory = os.path.dirname(__file__)

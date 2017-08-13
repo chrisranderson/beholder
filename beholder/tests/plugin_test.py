@@ -40,7 +40,8 @@ class PluginTest(tf.test.TestCase):
         'window_size': 10,
         'FPS': 10,
         'is_recording': False,
-        'show_all': False
+        'show_all': False,
+        'colormap': 'grayscale'
     }, config_path)
 
   def setUp(self):
@@ -77,7 +78,7 @@ class PluginTest(tf.test.TestCase):
   def test_section_info(self):
     response = self._get_json('section-info')
     info = response[0]
-    self.assertIn('range', info)
+    self.assertIn('name', info)
 
 
   def test_change_config(self):
@@ -87,7 +88,9 @@ class PluginTest(tf.test.TestCase):
         'scaling': 'layer',
         'window_size': 15,
         'FPS': 10,
-        'is_recording': 'false'
+        'is_recording': False,
+        'show_all': False,
+        'colormap': 'grayscale'
     })
     self.assertIn('window_size', response['config'])
 

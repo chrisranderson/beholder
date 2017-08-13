@@ -30,7 +30,9 @@ class BeholderPlugin(base_plugin.TBPlugin):
     self.PLUGIN_LOGDIR = pau.PluginDirectory(context.logdir, PLUGIN_NAME)
     self.FPS = 10
     self.most_recent_frame = get_image_relative_to_script('no-data.png')
-    self.most_recent_info = []
+    self.most_recent_info = [{
+        'name': 'Waiting for data...',
+    }]
 
     if not tf.gfile.Exists(self.PLUGIN_LOGDIR):
       tf.gfile.MakeDirs(self.PLUGIN_LOGDIR)
@@ -95,7 +97,6 @@ class BeholderPlugin(base_plugin.TBPlugin):
     self.FPS = config['FPS']
 
     write_pickle(config, '{}/{}'.format(self.PLUGIN_LOGDIR, CONFIG_FILENAME))
-
     return http_util.Respond(request, {'config': config}, 'application/json')
 
 
@@ -108,12 +109,16 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
 
   def _frame_generator(self):
+
     while True:
+      last_duration = 0
+
       if self.FPS == 0:
         continue
       else:
-        time.sleep(1/(self.FPS))
+        time.sleep(max(0, 1/(self.FPS) - last_duration))
 
+      start_time = time.time()
       array = self._fetch_current_frame()
 
       if len(array.shape) == 2:
@@ -129,6 +134,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
       content_type = b'Content-Type: image/png\r\n\r\n'
       response_content = frame_text + content_type + image_bytes + b'\r\n\r\n'
 
+      last_duration = time.time() - start_time
       yield response_content
 
 

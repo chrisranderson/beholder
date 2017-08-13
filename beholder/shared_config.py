@@ -15,7 +15,8 @@ DEFAULT_CONFIG = {
     'window_size': 15,
     'FPS': 10,
     'is_recording': False,
-    'show_all': False
+    'show_all': False,
+    'colormap': 'magma'
 }
 
 SECTION_HEIGHT = 128

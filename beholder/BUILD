@@ -6,15 +6,17 @@ licenses(["notice"])  # Apache 2.0
 exports_files(["LICENSE"])
 
 py_library(
-  name = "im_util",
+  name = "file_system_tools",
   data = ["resources"],
-  srcs = ["im_util.py"],
+  srcs = ["file_system_tools.py"],
   srcs_version = "PY2AND3",
 )
 
 py_library(
-  name = "file_system_tools",
-  srcs = ["file_system_tools.py"],
+  name = "im_util",
+  data = ["resources"],
+  srcs = ["im_util.py"],
+  deps = [":file_system_tools"],
   srcs_version = "PY2AND3",
 )
 

@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import numpy as np
 from PIL import Image
+from beholder.file_system_tools import resources_path, read_pickle
 
 def resize(nparray, height, width):
   image = Image.fromarray(nparray.astype(float))
@@ -61,3 +62,33 @@ def pad_to_shape(array, shape, constant=245):
     padding.append((start_padding, end_padding))
 
   return np.pad(array, padding, mode='constant', constant_values=constant)
+
+# New matplotlib colormaps by Nathaniel J. Smith, Stefan van der Walt,
+# and (in the case of viridis) Eric Firing.
+#
+# This file and the colormaps in it are released under the CC0 license /
+# public domain dedication. We would appreciate credit if you use or
+# redistribute these colormaps, but do not impose any legal restrictions.
+#
+# To the extent possible under law, the persons who associated CC0 with
+# mpl-colormaps have waived all copyright and related or neighboring rights
+# to mpl-colormaps.
+#
+# You should have received a copy of the CC0 legalcode along with this
+# work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+colormaps = read_pickle('{}/colormaps.pkl'.format(resources_path()))
+magma_data, inferno_data, plasma_data, viridis_data = colormaps
+
+def apply_colormap(image, colormap='magma'):
+  if colormap == 'grayscale':
+    return image
+
+  data_map = {
+      'magma': magma_data,
+      'inferno': inferno_data,
+      'plasma': plasma_data,
+      'viridis': viridis_data,
+  }
+
+  colormap_data = data_map[colormap]
+  return (colormap_data[image]*255).astype(np.uint8)

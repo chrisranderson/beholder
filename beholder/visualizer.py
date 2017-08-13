@@ -229,7 +229,7 @@ class Visualizer(object):
     sections = im_util.scale_sections(sections, self.config['scaling'])
 
     final_stack = [sections[0]]
-    padding = np.ones((padding_size, sections[0].shape[1])) * 245
+    padding = np.zeros((padding_size, sections[0].shape[1]))
 
     for section in sections[1:]:
       final_stack.append(padding)
@@ -281,9 +281,11 @@ class Visualizer(object):
     self._maybe_clear_deque()
 
     arrays = arrays if isinstance(arrays, list) else [arrays]
+
     sections = self._arrays_to_sections(arrays)
     self._save_section_info(arrays, sections)
     final_image = self._sections_to_image(sections)
+    final_image = im_util.apply_colormap(final_image, self.config['colormap'])
 
     return final_image
 

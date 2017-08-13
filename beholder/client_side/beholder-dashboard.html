@@ -99,6 +99,22 @@ limitations under the License.
                 Black is the smallest value in all sections, white is the largest value in all sections.
               </paper-tooltip>
             </paper-radio-group>
+
+            <div id="colormap-selection">
+              <div id="colormap-selection-label">Colormap:</div>
+              <paper-dropdown-menu
+                no-label-float
+                selected-item-label="{{_colormap}}"
+              >
+                <paper-menu class="dropdown-content" selected="0">
+                  <paper-item>magma</paper-item>
+                  <paper-item>inferno</paper-item>
+                  <paper-item>plasma</paper-item>
+                  <paper-item>viridis</paper-item>
+                  <paper-item>grayscale</paper-item>
+                </paper-menu>
+              </paper-dropdown-menu>
+            </div>
           </div>
 
         </template>
@@ -189,6 +205,19 @@ limitations under the License.
       .sidebar-section.beholder-dashboard:last-child {
         flex-grow: 0
       }
+
+      #colormap-selection {
+        display: flex;
+        margin-top: 5px;
+      }
+      #colormap-selection-label {
+        margin-top: 13px;
+      }
+      #colormap-selection paper-dropdown-menu {
+        margin-left: 10px;
+        --paper-input-container-focus-color: var(--tb-orange-strong);
+        width: 105px;
+      }
     </style>
   </template>
   <script>
@@ -262,6 +291,12 @@ limitations under the License.
           value: false,
           observer: '_configChanged'
         },
+
+        _colormap: {
+          type: String,
+          value: 'magma',
+          observer: '_configChanged'
+        }
       },
 
       _valuesNotFrame(values) {
@@ -282,10 +317,11 @@ limitations under the License.
           this._FPS,
           this._isRecording,
           this._showAll,
+          this._colormap
         ]
 
         for (var property of properties) {
-          if (typeof property === 'undefined') {
+          if (typeof property === 'undefined' || property === '') {
             return
           }
         }
@@ -298,7 +334,8 @@ limitations under the License.
           window_size: this._windowSize,
           FPS: this._FPS,
           is_recording: this._isRecording,
-          show_all: this._showAll
+          show_all: this._showAll,
+          colormap: this._colormap
         }
 
         this._requestManager.request(url, postData)
