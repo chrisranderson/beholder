@@ -1,5 +1,7 @@
 # Beholder
 
+**Good news**: Beholder is on track to be merged into TensorBoard. See [this issue](https://github.com/chrisranderson/beholder/issues/33) for discussion and [this milestone](https://github.com/chrisranderson/beholder/milestone/1) for issues related to the merge.
+
 ![beholder demo video](https://raw.githubusercontent.com/chrisranderson/beholder/master/readme-images/demo.gif)
 
 Beholder is a TensorBoard plugin for viewing frames of a video while your model trains. It comes with tools to visualize the parameters of your network, visualize arbitrary arrays like gradients,
@@ -30,11 +32,7 @@ As TensorBoard's third party plugin system currently functions, you need to buil
 7. Navigate to [http://localhost:6006](http://localhost:6006)
 
 ### Install a nightly build of TensorFlow
-**This is optional, but currently required to see summaries besides Beholder's visualizations in this version of TensorBoard.**
-
-This repository uses a version of TensorBoard that is newer than the one that comes with TensorFlow. It relies on a nightly build of TensorFlow. You can find nightly builds on [the TensorFlow README](https://github.com/tensorflow/tensorflow#installation), and `pip install <WHEEL_FILE>` to install.
-
-If you don't install the nightly build, you'll be able to use Beholder, but not see any other summaries (other plugins will be listed as inactive, even if they sould be active). This issue is related to this error: `Protocol message has no non-repeated submessage field "metadata"`. Installing a nightly build should fix this problem.
+This repository uses a version of TensorBoard that is newer than the one that comes with TensorFlow. That version of TensorBoard relies on a nightly build of TensorFlow. You can find nightly builds on [the TensorFlow README](https://github.com/tensorflow/tensorflow#installation), and `pip install <WHEEL_FILE>` to install.
 
 ## Run the demo
 `bazel build beholder/demos/demo && ./bazel-bin/beholder/demos/demo/demo`

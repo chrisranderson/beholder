@@ -31,13 +31,23 @@ py_library(
 )
 
 py_library(
+  name = "video_writing",
+  srcs = ["video_writing.py"],
+  deps = [
+    ":im_util"
+  ],
+  srcs_version = "PY2AND3"
+)
+
+py_library(
   name = "beholder",
   data = ["resources"],
-  srcs = ["beholder.py", "shared_config.py", "video_writing.py"],
+  srcs = ["beholder.py", "shared_config.py"],
   deps = [
     ":im_util",
     ":visualizer",
     ":file_system_tools",
+    ":video_writing",
     "@org_tensorflow_tensorboard//tensorboard/backend/event_processing:plugin_asset_util",
   ],
   srcs_version = "PY2AND3",

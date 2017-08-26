@@ -6,6 +6,5 @@ setup(
     packages=['beholder'],
     package_data={'beholder': ['resources/*']},
     url='https://github.com/chrisranderson/beholder',
-    author='Chris Anderson',
-    install_requires=['pillow'],
+    author='Chris Anderson'
 )

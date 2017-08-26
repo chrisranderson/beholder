@@ -43,8 +43,9 @@ import sys
 import time
 
 import numpy as np
-from PIL import Image
 import tensorflow as tf
+
+from beholder import im_util
 
 DEVNULL = open(os.devnull, 'wb')
 PY3 = sys.version_info.major >= 3
@@ -242,9 +243,9 @@ class PNGWriter(BaseVideoWriter):
     self.frame_number = 0
 
   def write_frame(self, img_array):
-    image = Image.fromarray(img_array.astype(np.uint8))
-    image.save('{}/{}.png'.format(self.frame_directory,
-                                  str(self.frame_number).zfill(5)))
+    filename = '{}/{}.png'.format(self.frame_directory,
+                                  str(self.frame_number).zfill(5))
+    im_util.write_image(img_array.astype(np.uint8), filename)
     self.frame_number += 1
 
   def close(self):

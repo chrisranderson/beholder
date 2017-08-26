@@ -7,19 +7,22 @@ import time
 
 from google.protobuf import message
 import numpy as np
-from PIL import Image
-import tensorflow as tf
-from werkzeug import wrappers
-
+import tensorboard
 from tensorboard.backend import http_util
 from tensorboard.backend.event_processing import plugin_asset_util as pau
 from tensorboard.plugins import base_plugin
+import tensorflow as tf
+from werkzeug import wrappers
+
+from beholder.im_util import get_image_relative_to_script, encode_png
 from beholder.shared_config import PLUGIN_NAME, SECTION_HEIGHT, IMAGE_WIDTH
 from beholder.shared_config import SECTION_INFO_FILENAME, CONFIG_FILENAME,\
   TAG_NAME, SUMMARY_FILENAME, DEFAULT_CONFIG
 from beholder.file_system_tools import read_tensor_summary, read_pickle,\
-  write_pickle, get_image_relative_to_script
+  write_pickle
 
+import sys
+print(sys.version)
 
 class BeholderPlugin(base_plugin.TBPlugin):
 
@@ -61,7 +64,7 @@ class BeholderPlugin(base_plugin.TBPlugin):
       self.most_recent_frame = frame
       return frame
 
-    except (message.DecodeError, IOError):
+    except (message.DecodeError, IOError, tf.errors.NotFoundError):
       return self.most_recent_frame
 
 
@@ -120,18 +123,11 @@ class BeholderPlugin(base_plugin.TBPlugin):
 
       start_time = time.time()
       array = self._fetch_current_frame()
-
-      if len(array.shape) == 2:
-        image = Image.fromarray(array, mode='L') # L: 8-bit grayscale
-      if len(array.shape) == 3:
-        image = Image.fromarray(array)
-
-      bytes_buffer = io.BytesIO()
-      image.save(bytes_buffer, 'PNG')
-      image_bytes = bytes_buffer.getvalue()
+      image_bytes = encode_png(array)
 
       frame_text = b'--frame\r\n'
       content_type = b'Content-Type: image/png\r\n\r\n'
+
       response_content = frame_text + content_type + image_bytes + b'\r\n\r\n'
 
       last_duration = time.time() - start_time
