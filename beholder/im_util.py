@@ -246,7 +246,7 @@ resize = Resizer()
 
 
 def read_image(filename):
-  with tf.gfile.Open(filename) as image_file:
+  with tf.gfile.Open(filename, 'rb') as image_file:
     return np.array(decode_png(image_file.read()))
 
 
