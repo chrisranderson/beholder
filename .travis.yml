@@ -25,7 +25,7 @@ before_install:
     ./install.sh --user
     rm -f install.sh
 
-  - pip install tensorflow
+  - pip install tf-nightly
   - pip install pylint
 
 script:
