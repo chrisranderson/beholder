@@ -21,7 +21,7 @@ or frames that you've already created:
 ## Installation
 
 ### Build and run TensorBoard
-As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin (and potentially [install a nightly build of TensorFlow](#install-a-nightly-build-of-tensorflow)). Expected time: 5-30 minutes (high variance due to Internet speed).
+As TensorBoard's third party plugin system currently functions, you need to build a different version of TensorBoard from scratch to use this plugin.
 
 1. [Install Bazel](https://docs.bazel.build/versions/master/install.html). Tested with Bazel 0.5.1 and 0.5.3. One test with 0.2.2b did not work.
 2. Clone the repository: `git clone https://github.com/chrisranderson/beholder.git`
@@ -32,7 +32,7 @@ As TensorBoard's third party plugin system currently functions, you need to buil
 7. Navigate to [http://localhost:6006](http://localhost:6006)
 
 ### Install a nightly build of TensorFlow
-This repository uses a version of TensorBoard that is newer than the one that comes with TensorFlow. That version of TensorBoard relies on a nightly build of TensorFlow. You can find nightly builds on [the TensorFlow README](https://github.com/tensorflow/tensorflow#installation), and `pip install <WHEEL_FILE>` to install.
+This repository uses a version of TensorBoard that is newer than the one that comes with TensorFlow. That version of TensorBoard relies on a nightly build of TensorFlow. You can find nightly builds on [the TensorFlow README](https://github.com/tensorflow/tensorflow#installation), and `pip install <WHEEL_FILE>` to install, or use `pip install tf-nightly` to get a nightly build of the CPU only version.
 
 ## Run the demo
 `bazel build beholder/demos/demo && ./bazel-bin/beholder/demos/demo/demo`
