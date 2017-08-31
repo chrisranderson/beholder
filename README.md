@@ -136,3 +136,7 @@ Whether ffmpeg is installed or not, a new recording starts whenever the shape of
 ## Feedback
 
 Please let me hear your thoughts/complaints/suggestions/success stories/unrelated banter. [Submit an issue](https://github.com/chrisranderson/beholder/issues/new), or [send me a direct message on Twitter](https://twitter.com/chrisdotio) (you don't need to follow me to send me a message).
+
+## Hiring?
+
+I'm graduating soon with my Master's degree in Computer Science, and I'll be available for full-time work in January (2018). If you or someone you know is hiring software engineers and may be interested, please let me know at chris.anderson@byu.net.
