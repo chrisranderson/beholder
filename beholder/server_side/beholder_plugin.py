@@ -42,18 +42,30 @@ class BeholderPlugin(base_plugin.TBPlugin):
       write_pickle(DEFAULT_CONFIG, '{}/{}'.format(self.PLUGIN_LOGDIR,
                                                   CONFIG_FILENAME))
 
+
   def get_plugin_apps(self):
     return {
         '/change-config': self._serve_change_config,
         '/beholder-frame': self._serve_beholder_frame,
         '/section-info': self._serve_section_info,
         '/ping': self._serve_ping,
-        '/tags': self._serve_tags
+        '/tags': self._serve_tags,
+        '/is-active': self._serve_is_active,
     }
 
 
   def is_active(self):
-    return True
+    summary_filename = '{}/{}'.format(self.PLUGIN_LOGDIR, SUMMARY_FILENAME)
+    info_filename = '{}/{}'.format(self.PLUGIN_LOGDIR, SECTION_INFO_FILENAME)
+    return tf.gfile.Exists(summary_filename) and\
+           tf.gfile.Exists(info_filename)
+
+
+  @wrappers.Request.application
+  def _serve_is_active(self, request):
+    return http_util.Respond(request,
+                             {'is_active': self.is_active()},
+                             'application/json')
 
 
   def _fetch_current_frame(self):

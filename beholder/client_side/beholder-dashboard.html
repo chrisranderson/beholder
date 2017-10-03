@@ -141,16 +141,55 @@ limitations under the License.
           </paper-button>
         </div>
 
+        <div class="sidebar-section">
+          <p class="disclaimer"><i>Note: Beholder currently only works well on local file systems.</i></p>
+        </div>
+
       </div>
       <div class="center">
 
-        <beholder-video id="video"> </beholder-video>
+        <template is="dom-if" if="[[!_is_active]]">
+          <div class="no-data-warning">
+            <h3>No Beholder data was found.</h3>
 
-        <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
-          <beholder-info
-            id="info"
-            fps="[[_FPS]]">
-          </beholder-info>
+            <p>Probable causes:</p>
+            <ul>
+              <li>Your script isn't running.</li>
+              <li>You aren't calling the <pre>update</pre> function.</li>
+            </ul>
+
+            <p>To use Beholder, import and instantiate the Beholder class:</p>
+
+            <pre>
+from beholder.beholder import Beholder
+visualizer = Beholder(session=sess,
+                      logdir=LOG_DIRECTORY)</pre>
+
+            <p>And call the update function after every train step (both arguments are optional):</p>
+
+            <pre>
+visualizer.update(
+  arrays=list_of_np_arrays,
+  frame=two_dimensional_np_array,
+)</pre>
+
+            <p>If you think everything is set up properly, please see
+            <a href="https://github.com/chrisranderson/beholder/">the README</a>
+            for more information and consider <a href="https://github.com/chrisranderson/beholder/issues/new">filing an issue on GitHub</a>.</p>
+
+            <p class="disclaimer"><i>Note: Beholder currently only works well on local file systems.</i></p>
+          </div>
+        </template>
+
+        <template is="dom-if" if="[[_is_active]]">
+          <beholder-video id="video"></beholder-video>
+
+          <template is="dom-if" if="[[_valuesNotFrame(_values)]]">
+            <beholder-info
+              id="info"
+              fps="[[_FPS]]">
+            </beholder-info>
+          </template>
         </template>
 
       </div>
@@ -162,41 +201,51 @@ limitations under the License.
         display: flex;
         padding: 0;
       }
+
       .no-data-warning {
         max-width: 540px;
         margin: 80px auto 0 auto;
       }
+
       .title {
         font-size: 16px;
         margin: 8px 5px 8px 0;
         color: black;
       }
+
       .title small {
         font-weight: normal;
       }
+
       paper-checkbox {
         display: block;
         padding: 4px;
       }
+
       paper-radio-button {
         display: block;
         padding: 5px;
       }
+
       paper-radio-group {
         margin-top: 5px;
       }
+
       paper-slider {
         margin-left: 12px;
         --paper-slider-knob-color: var(--tb-orange-strong);
         --paper-slider-active-color: var(--tb-orange-strong);
         flex-grow: 2;
       }
+
       pre {
         display: inline;
       }
+
       paper-button#record_button {
         color: #D32F2F;
       }
+
       paper-button#record_button.is-recording {
         background: #D32F2F;
         color: white;
@@ -210,14 +259,25 @@ limitations under the License.
         display: flex;
         margin-top: 5px;
       }
+
       #colormap-selection-label {
         margin-top: 13px;
       }
+
       #colormap-selection paper-dropdown-menu {
         margin-left: 10px;
         --paper-input-container-focus-color: var(--tb-orange-strong);
         width: 105px;
       }
+
+      .sidebar {
+        max-width: 350px;
+      }
+
+      p.disclaimer {
+        color: #999;
+      }
+
     </style>
   </template>
   <script>
@@ -296,7 +356,12 @@ limitations under the License.
           type: String,
           value: 'magma',
           observer: '_configChanged'
-        }
+        },
+
+        _is_active: {
+          type: Boolean,
+          value: false,
+        },
       },
 
       _valuesNotFrame(values) {
@@ -353,7 +418,16 @@ limitations under the License.
         this.$.record_button.classList.toggle('is-recording')
       },
 
+      ready() {
+        this.reload()
+      },
+
       reload() {
+        const url = getRouter().pluginRoute(PLUGIN_NAME, '/is-active');
+
+        this._requestManager.request(url).then(response => {
+          this.set('_is_active', response['is_active'])
+        })
       },
     });
   </script>
