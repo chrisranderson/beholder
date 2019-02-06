@@ -1,4 +1,4 @@
-**Beholder is now part of [TensorBoard](https://github.com/tensorflow/tensorboard)** as of [this pull request](https://github.com/tensorflow/tensorboard/pull/613), and is now maintained by the TensorBoard team. See [this comment](https://github.com/tensorflow/tensorboard/pull/613) for the latest information on how to use Beholder with your project.
+# **Beholder is now part of [TensorBoard](https://github.com/tensorflow/tensorboard)** as of [this pull request](https://github.com/tensorflow/tensorboard/pull/613), and is now maintained by the TensorBoard team. See [this comment](https://github.com/tensorflow/tensorboard/pull/613) for the latest information on how to use Beholder with your project.
 
 <hr/>
 
